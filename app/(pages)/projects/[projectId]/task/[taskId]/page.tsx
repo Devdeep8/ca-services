@@ -19,6 +19,7 @@ export default async function TaskPage({ params }: TaskPageProps) {
 
   const { projectId, taskId } = await params;
 
+  // FIX 1: Correctly query for members of the specific project, not all users.
   const [task, projectMembers] = await Promise.all([
     db.task.findUnique({
       where: { id: taskId, projectId: projectId },
@@ -39,7 +40,6 @@ export default async function TaskPage({ params }: TaskPageProps) {
         },
       },
     }),
-    // FIX: Correctly query for members of the specific project.
     db.user.findMany()
   ]);
 
@@ -47,7 +47,7 @@ export default async function TaskPage({ params }: TaskPageProps) {
     notFound();
   }
 
-  // This is correct: create a plain object to pass to the client.
+  // FIX 2: Fully serialize all Date objects in nested arrays.
   const serializableTask = {
     ...task,
     actualHours: task.actualHours.toNumber(),
@@ -59,10 +59,13 @@ export default async function TaskPage({ params }: TaskPageProps) {
     comments: task.comments.map(comment => ({
       ...comment,
       createdAt: comment.createdAt.toISOString(),
+      updatedAt: comment.updatedAt.toISOString(), // This was missing
     })),
     timeEntries: task.timeEntries.map(entry => ({
       ...entry,
       date: entry.date.toISOString(),
+      createdAt: entry.createdAt.toISOString(), // This was missing
+      updatedAt: entry.updatedAt.toISOString(), // This was missing
     })),
   };
 
