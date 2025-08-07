@@ -58,7 +58,7 @@ export default function AcceptInvitationClient() {
             if (!response.ok) {
                 throw new Error(result.error || 'Failed to accept invitation.');
             }
-            router.push(`/workspaces/${result.workspaceId}`);
+            router.push(`/workspaces/${result.workspaceId}/members`);
         } catch (err: any) {
             setError(err.message);
         } finally {

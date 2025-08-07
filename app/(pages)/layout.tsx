@@ -136,7 +136,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { name: 'Projects', href: '/projects', icon: FolderOpen },
-    { name: 'Team', href: `/workspaces`, icon: Users },
+    { name: 'Team', href: `/workspaces/${workspaces.length > 0 ? workspaces[0].id : ''}/members`, icon: Users },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 

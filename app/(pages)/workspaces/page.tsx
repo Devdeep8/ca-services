@@ -18,7 +18,7 @@ export default async function WorkspacesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {userWorkspaces.map((workspace) => (
             <Link 
-              href={`/workspaces/${workspace.id}`} 
+              href={`/workspaces/${workspace.id}/member`} 
               key={workspace.id}
               className="block p-6 bg-zinc-800 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors"
             >
