@@ -36,7 +36,7 @@ export default function AcceptInvitationClient() {
         if (status === 'authenticated') {
             setMessage('You are invited to join a workspace. Click below to accept.');
         } else if (status === 'unauthenticated' && !authToken) {
-            const loginUrl = token ? `/login?invitationToken=${token}` : '/login';
+            const loginUrl = token ? `/sign-in?invitationToken=${token}` : '/login';
             router.push(loginUrl);
         }
     }, [status, authToken, token, router]);
