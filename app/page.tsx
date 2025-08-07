@@ -796,9 +796,9 @@ export default function LandingPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 font-bold">
                 <div className="size-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground">
-                  S
+                  P
                 </div>
-                <span>SaaSify</span>
+                <span>{process.env.NEXT_PUBLIC_APP_NAME}</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Streamline your workflow with our all-in-one SaaS platform. Boost productivity and scale your business.
@@ -937,7 +937,7 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-col gap-4 sm:flex-row justify-between items-center border-t border-border/40 pt-8">
             <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} SaaSify. All rights reserved.
+              &copy; {new Date().getFullYear()} Prabisha Consulting. All rights reserved.
             </p>
             <div className="flex gap-4">
               <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
