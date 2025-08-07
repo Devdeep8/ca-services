@@ -108,7 +108,7 @@ export default function LandingPage() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2 font-bold">
             <div className="size-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground">
-              S
+              P
             </div>
             <span>{process.env.NEXT_PUBLIC_APP_NAME || ""}</span>
           </div>
@@ -144,7 +144,7 @@ export default function LandingPage() {
               <span className="sr-only">Toggle theme</span>
             </Button>
             <Link
-              href="/login"
+              href="/sign-in"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Log in
