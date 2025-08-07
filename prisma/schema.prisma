@@ -114,6 +114,7 @@ model WorkspaceInvitation {
   role          WorkspaceRole @default(MEMBER)
   token         String   @unique
   accepted      Boolean  @default(false)
+  temppassword  String?
   expiresAt     DateTime
   createdAt     DateTime @default(now())
 

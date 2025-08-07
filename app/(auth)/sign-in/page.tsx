@@ -35,7 +35,7 @@ export default function SignInPage() {
       if (res?.ok) {
         window.location.href = '/projects'
       } else {
-        form.setError('root', { message: res?.error || "Sign in failed after registration" })
+        form.setError('root', { message:  "Sign in failed after registration" })
       }
     } catch (error) {
       form.setError('root', { message: 'Something went wrong. Please try again.' })

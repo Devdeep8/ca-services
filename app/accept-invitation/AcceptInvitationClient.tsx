@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 export default function AcceptInvitationClient() {
     const router = useRouter();
@@ -12,11 +12,17 @@ export default function AcceptInvitationClient() {
     const authToken = searchParams.get('auth_token');
     const { data: session, status } = useSession();
 
-    const [message, setMessage] = useState('Verifying your invitation...');
+    const [message, setMessage] = useState('Preparing invitation...');
     const [error, setError] = useState('');
     const [isAccepting, setIsAccepting] = useState(false);
 
-    // This effect handles the auto-login logic
+    // --- NEWLY ADDED ---
+    // This effect runs once on mount to clear any existing user session.
+    useEffect(() => {
+        signOut({ redirect: false });
+    }, []); // Empty dependency array ensures this runs only once.
+
+    // This effect handles the auto-login logic if an auth_token is present
     useEffect(() => {
         if (authToken && status === 'unauthenticated') {
             setMessage('Logging you in securely...');
@@ -25,7 +31,7 @@ export default function AcceptInvitationClient() {
                     if (res?.error) {
                         setError("Your magic link is invalid or has expired. Please log in manually.");
                         setMessage('');
-                        setTimeout(() => router.push(`/login?invitationToken=${token}`), 3000);
+                        setTimeout(() => router.push(`/sign-in?invitationToken=${token}`), 3000);
                     }
                 });
         }
@@ -36,6 +42,7 @@ export default function AcceptInvitationClient() {
         if (status === 'authenticated') {
             setMessage('You are invited to join a workspace. Click below to accept.');
         } else if (status === 'unauthenticated' && !authToken) {
+            // After signOut is complete, if there's no magic link, redirect to login.
             const loginUrl = token ? `/sign-in?invitationToken=${token}` : '/login';
             router.push(loginUrl);
         }
@@ -66,8 +73,13 @@ export default function AcceptInvitationClient() {
         }
     };
 
-    if (status === 'loading' || (authToken && status === 'unauthenticated')) {
-        return <div className="text-center p-10 text-white">Verifying...</div>
+    // Updated loading state to handle the initial sign-out and potential sign-in
+    if (status === 'loading' || (status === 'unauthenticated' && authToken)) {
+       return (
+         <div className="flex flex-col items-center justify-center min-h-screen text-white p-4">
+            <h1 className="text-3xl font-bold">Verifying Invitation...</h1>
+         </div>
+       );
     }
 
     return (

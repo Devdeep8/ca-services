@@ -10,13 +10,14 @@ import { authOptions } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params:Promise<{ workspaceId: string }> }
+  { params }: { params: Promise<{ workspaceId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
+
     const currentUserId = (session.user as { id: string }).id;
     const { workspaceId } = await params;
     const { email } = await request.json();
@@ -25,31 +26,27 @@ export async function POST(
       return new NextResponse(JSON.stringify({ error: 'Email is required' }), { status: 400 });
     }
 
-    // Permission checks (uncomment and adjust as needed)
-    // const member = await db.workspaceMember.findFirst({ where: { workspaceId, userId: currentUserId } });
-    // if (!member || ![WorkspaceRole.OWNER, WorkspaceRole.ADMIN].includes(member.role)) {
-    //   return new NextResponse(JSON.stringify({ error: 'Permission denied' }), { status: 403 });
-    // }
+    const existingMember = await db.workspaceMember.findFirst({
+      where: { workspaceId, user: { email } }
+    });
 
-    const existingMember = await db.workspaceMember.findFirst({ where: { workspaceId, user: { email } } });
     if (existingMember) {
       return new NextResponse(JSON.stringify({ error: 'This user is already a member.' }), { status: 409 });
     }
-    
-    // --- START OF NEW LOGIC ---
+
+    // Prepare variables
     let invitationLink: string;
+    let tempPassword: string | null = null;
     const existingUser = await db.user.findUnique({ where: { email } });
     const invitationToken = crypto.randomBytes(32).toString('hex');
 
     if (existingUser) {
-      // FLOW FOR EXISTING USER: Standard invitation link
       invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation?token=${invitationToken}`;
     } else {
-      // FLOW FOR NEW USER: Create user and generate a magic link
-      const tempPassword = crypto.randomBytes(16).toString('hex');
-      console.log(tempPassword , email , "get the pssword for now")
+      tempPassword = crypto.randomBytes(16).toString('hex');
+      console.log(tempPassword, email, 'Generated temporary password');
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      
+
       const newUser = await db.user.create({
         data: {
           email,
@@ -60,53 +57,72 @@ export async function POST(
       });
 
       const authToken = jwt.sign({ userId: newUser.id }, process.env.NEXTAUTH_SECRET!, {
-        expiresIn: '1h', // Magic link is valid for 1 hour
+        expiresIn: '1h',
       });
 
       invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation?token=${invitationToken}&auth_token=${authToken}`;
     }
-    // --- END OF NEW LOGIC ---
 
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // Invitation valid for 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     await db.workspaceInvitation.upsert({
-        where: { workspaceId_email: { workspaceId, email } },
-        update: { token: invitationToken, expiresAt, invitedById: currentUserId, role: WorkspaceRole.MEMBER },
-        create: {
-            workspaceId,
-            email,
-            token: invitationToken,
-            expiresAt,
-            invitedById: currentUserId,
-            role: WorkspaceRole.MEMBER,
-        },
+      where: { workspaceId_email: { workspaceId, email } },
+      update: {
+        token: invitationToken,
+        expiresAt,
+        invitedById: currentUserId,
+        role: WorkspaceRole.MEMBER,
+        temppassword: tempPassword ?? undefined,
+      },
+      create: {
+        workspaceId,
+        email,
+        token: invitationToken,
+        expiresAt,
+        invitedById: currentUserId,
+        role: WorkspaceRole.MEMBER,
+        temppassword: tempPassword ?? undefined,
+      },
     });
 
-    console.log(invitationLink)
-
     await sendMail({
-        to: email,
-        subject: `You're invited to join a workspace on Project Pro`,
-        html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-              <h2>Invitation to Project Pro</h2>
-              <p>You have been invited to join a workspace.</p>
-              <p>Please click the button below to accept the invitation. This link will expire in 24 hours.</p>
-              <p style="margin: 20px 0;">
-                  <a href="${invitationLink}" 
-                     style="display: inline-block; padding: 12px 24px; color: white; background-color: #0d6efd; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                     Accept Invitation
-                  </a>
-              </p>
-              <hr style="border: none; border-top: 1px solid #eee;">
-              <p style="margin-top: 24px; font-size: 0.9em; color: #6c757d;">
-                  If the button above doesn't work, you can copy and paste the following link into your web browser:
-              </p>
-              <p style="font-size: 0.8em; color: #343a40; word-break: break-all;">
-                  ${invitationLink}
-              </p>
-          </div>
-        `,
-      });
+      to: email,
+      subject: `You're invited to join a workspace on Project Pro`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <h2>You've been invited to join Project Pro</h2>
+          <p>You have been invited to join a workspace.</p>
+          <p>Please click the button below to accept the invitation. This link will expire in 24 hours.</p>
+
+          <p style="margin: 20px 0;">
+            <a href="${invitationLink}" 
+              style="display: inline-block; padding: 12px 24px; background-color: #0d6efd; color: white; text-decoration: none; border-radius: 6px;">
+              Accept Invitation
+            </a>
+          </p>
+
+          ${
+            tempPassword
+              ? `
+              <div style="margin-top: 20px; padding: 12px; background-color: #f9f9f9; border: 1px solid #ccc; border-radius: 4px;">
+                <p><strong>Login Credentials:</strong></p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+                <p style="font-size: 0.9em; color: #555;">You can change your password after logging in.</p>
+                  <p style="font-size: 0.9em; color: #555;">
+            After clicking the invitation link above, use this email and password to log in and set up your account.
+          </p>
+              </div>
+              `
+              : ''
+          }
+
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
+          <p>If the button doesn't work, copy and paste this link into your browser:</p>
+          <p style="font-size: 0.85em; word-break: break-word;">${invitationLink}</p>
+        </div>
+      `,
+    });
 
     return NextResponse.json({ message: 'Invitation sent successfully' });
   } catch (error) {
