@@ -47,6 +47,7 @@ export async function POST(
     } else {
       // FLOW FOR NEW USER: Create user and generate a magic link
       const tempPassword = crypto.randomBytes(16).toString('hex');
+      console.log(tempPassword , email , "get the pssword for now")
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
       
       const newUser = await db.user.create({

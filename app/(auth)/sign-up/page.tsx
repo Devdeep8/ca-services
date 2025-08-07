@@ -202,7 +202,7 @@ export default function SignUpPage() {
               </form>
             </Form>
 
-            <div className="flex items-center my-4">
+            {/* <div className="flex items-center my-4">
               <span className="flex-1 h-px bg-gray-200" />
               <span className="mx-2 text-gray-400 text-xs">OR</span>
               <span className="flex-1 h-px bg-gray-200" />
@@ -215,7 +215,7 @@ export default function SignUpPage() {
               disabled={isLoading}
             >
               Sign up with Google
-            </Button>
+            </Button> */}
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">

@@ -53,7 +53,7 @@ export default function MembersPage() {
     }, [workspaceId]);
 
     return (
-        <div className="p-4 md:p-8 text-white">
+        <div className="p-4 md:p-8">
             <header className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold">Members</h1>
