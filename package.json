@@ -85,6 +85,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^18.2.49",
     "@types/react-dom": "^18.2.17",
+    "cross-env": "^10.0.0",
     "prisma": "latest",
     "tailwindcss": "^4.0.1",
     "ts-node": "^10.9.2",
