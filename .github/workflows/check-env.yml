@@ -1,0 +1,39 @@
+name: Check Environment Variables
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  env-check:
+    name: Verify Required ENV Vars
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Create .env.production from GitHub Secrets
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}" >> .env.production
+          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env.production
+          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env.production
+          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env.production
+          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env.production
+
+      - name: Run ENV check for production
+        run: yarn check-env:prod

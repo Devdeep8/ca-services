@@ -195,7 +195,7 @@ export default function DashboardLayout({
       }/members`,
       icon: Users,
     },
-    { name: "Settings", href: "/settings", icon: Settings },
+    { name: "Settings", href: `/account/${session?.user?.id}/settings`, icon: Settings },
   ];
 
   return (

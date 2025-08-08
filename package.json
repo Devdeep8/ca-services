@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    
+    "prebuild": "yarn check-env",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:seed": "ts-node prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "check-env": "tsx scripts/check-env.ts",
+    "check-env:prod": "cross-env NODE_ENV=production tsx scripts/check-env.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -52,6 +56,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.1",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.12",
     "input-otp": "^1.4.2",
@@ -77,17 +82,18 @@
     "@tailwindcss/postcss": "^4.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
-    "@types/node": "^20.11.30",
+    "@types/node": "^24.2.1",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^18.2.49",
     "@types/react-dom": "^18.2.17",
     "prisma": "latest",
     "tailwindcss": "^4.0.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "tw-animate-css": "^1.3.6",
-    "typescript": "^5.4.5"
+    "typescript": "^5.9.2"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.js"
   }
 }

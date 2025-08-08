@@ -49,36 +49,36 @@ export default function ProjectPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (status === 'unauthenticated') {
-      router.replace('/sign-in');
-      return;
-    }
+useEffect(() => {
+  if (status === 'loading') return;
+  if (status === 'unauthenticated') {
+    router.replace('/sign-in');
+    return;
+  }
 
-    const checkOnboarding = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/onboarding/check');
-        if (!res.ok) throw new Error('Failed to check workspace status.');
-        const data = await res.json();
-        if (!data.workspaceId) {
-          router.replace('/onboarding');
-        } else {
-          setWorkspace({ id: data.workspaceId, name: data.workspaceName });
-        }
-      } catch (err) {
-        setError('Could not verify your workspace. Please try again later.');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+  const checkOnboarding = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/onboarding/check');
+      if (!res.ok) throw new Error('Failed to check workspace status.');
+      const data = await res.json();
+      if (!data.workspaceId) {
+        router.replace('/onboarding');
+      } else {
+        setWorkspace({ id: data.workspaceId, name: data.workspaceName });
       }
-    };
-
-    if (status === 'authenticated') {
-      checkOnboarding();
+    } catch (err) {
+      setError('Could not verify your workspace. Please try again later.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-  }, [session, status, router]);
+  };
+
+  if (status === 'authenticated') {
+    checkOnboarding();
+  }
+}, [status, router]); // ✅ Corrected dependency array
 
   useEffect(() => {
     if (!workspace) return;
