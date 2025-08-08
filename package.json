@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    
     "prebuild": "yarn check-env",
     "dev": "next dev",
     "build": "next build",
@@ -95,5 +94,6 @@
   },
   "prisma": {
     "seed": "ts-node prisma/seed.js"
-  }
+  },
+  "packageManager": "yarn@3.6.4"
 }

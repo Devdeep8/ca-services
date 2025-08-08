@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Briefcase } from 'lucide-react';
 import { db } from '@/lib/db';
-export default async function ProfilePage({ params }: { params: { profileId: string } }) {
+export default async function ProfilePage({ params }: { params: Promise<{ profileId: string }> }) {
+  const {profileId} = await params;
   const user = await db.user.findUnique({
-    where: { id: params.profileId },
+    where: { id:profileId },
     include: {
       projectMemberships: {
         include: {
