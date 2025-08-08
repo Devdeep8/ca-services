@@ -21,9 +21,6 @@ loadEnvFile(isProd ? ".env.production" : ".env.local");
 
 const requiredEnvVars = [
   "DATABASE_URL",
-  "NEXTAUTH_SECRET",
-  "NEXTAUTH_URL",
-  "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_APP_NAME",
   "SMTP_HOST",
   "SMTP_PORT",
