@@ -1,4 +1,4 @@
-name: Check Environment Variables
+name: Check Environment Variables and Run Tests
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  env-check:
-    name: Verify Required ENV Vars
+  env-and-test:
+    name: Verify ENV Vars & Run Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -39,3 +39,8 @@ jobs:
 
       - name: Run ENV check for production
         run: yarn check-env:prod
+
+      - name: Run Tests
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }} # For DB-related tests
+        run: yarn test --watchAll=false

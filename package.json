@@ -13,7 +13,9 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "check-env": "tsx scripts/check-env.ts",
-    "check-env:prod": "cross-env NODE_ENV=production tsx scripts/check-env.ts"
+    "check-env:prod": "cross-env NODE_ENV=production tsx scripts/check-env.ts",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -79,15 +81,21 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^24.2.1",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^18.2.49",
     "@types/react-dom": "^18.2.17",
     "cross-env": "^10.0.0",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
     "prisma": "latest",
     "tailwindcss": "^4.0.1",
+    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
     "tw-animate-css": "^1.3.6",
