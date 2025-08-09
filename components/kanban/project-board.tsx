@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { LayoutGrid, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { ProjectContext } from '@/context/project-context'; // <-- Import the context
+import { ProjectContext } from '@/context/project-context';
 
 const BOARD_COLUMNS = [
   { title: 'To Do', status: TaskStatus.TODO },
@@ -45,6 +45,7 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
   const [isLoading, setIsLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<TaskWithAssignee | null>(null);
   const [viewMode, setViewMode] = useState<'board' | 'table'>('board');
+  const [originalTaskPosition, setOriginalTaskPosition] = useState<{ status: TaskStatus; index: number } | null>(null);
 
   const fetchBoardData = async () => {
     setIsLoading(true);
@@ -55,6 +56,7 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
       setBoardData(data);
     } catch (error) {
       console.error(error);
+      toast.error("Failed to load project board.");
       setBoardData(null);
     } finally {
       setIsLoading(false);
@@ -62,7 +64,7 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
   };
 
   useEffect(() => {
-    if(projectId) fetchBoardData();
+    if (projectId) fetchBoardData();
   }, [projectId]);
 
   const tasksByStatus = useMemo(() => {
@@ -71,14 +73,12 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
     };
     if (!boardData) return initial;
     
-    // Create a new copy to avoid mutation issues
-    const grouped = { ...initial };
-    boardData.tasks.forEach(task => {
-        if (grouped[task.status]) {
-            grouped[task.status].push(task);
+    return boardData.tasks.reduce((acc, task) => {
+        if (task.status) {
+            (acc[task.status] = acc[task.status] || []).push(task);
         }
-    });
-    return grouped;
+        return acc;
+    }, initial);
   }, [boardData]);
 
   const sensors = useSensors(
@@ -86,89 +86,15 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
       activationConstraint: { distance: 10 },
     })
   );
-
-  function handleDragStart(event: DragStartEvent) {
-    if (event.active.data.current?.type === 'Task') {
-      setActiveTask(event.active.data.current.task);
-    }
-  }
-
-  function handleDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
-    const activeId = active.id;
-    const overId = over.id;
-    if (activeId === overId) return;
-
-    const isActiveATask = active.data.current?.type === "Task";
-    if (!isActiveATask) return;
-
-    setBoardData((board) => {
-        if (!board) return null;
-        const newTasks = [...board.tasks];
-        const activeTaskIndex = newTasks.findIndex((t) => t.id === activeId);
-        
-        const isOverATask = over.data.current?.type === "Task";
-        if (isOverATask) {
-            const overTaskIndex = newTasks.findIndex((t) => t.id === overId);
-            if (newTasks[activeTaskIndex].status !== newTasks[overTaskIndex].status) {
-                newTasks[activeTaskIndex].status = newTasks[overTaskIndex].status;
-                return { ...board, tasks: arrayMove(newTasks, activeTaskIndex, overTaskIndex) };
-            }
-            return { ...board, tasks: arrayMove(newTasks, activeTaskIndex, overTaskIndex) };
-        }
-
-        const isOverAColumn = over.data.current?.type === "Column";
-        if (isOverAColumn) {
-            if (newTasks[activeTaskIndex].status !== overId) {
-                newTasks[activeTaskIndex].status = overId as TaskStatus;
-                // Important: we need to return a new array for React to detect the change
-                return { ...board, tasks: arrayMove(newTasks, activeTaskIndex, activeTaskIndex) };
-            }
-        }
-        return board;
+  
+  const handleTaskCreated = (newTask: TaskWithAssignee) => {
+    setBoardData(prev => {
+        if (!prev) return null;
+        const updatedTasks = [newTask, ...prev.tasks];
+        return { ...prev, tasks: updatedTasks };
     });
-  }
-
-  async function handleDragEnd(event: DragEndEvent) {
-    const previousBoardData = boardData;
-    setActiveTask(null);
-
-    const { active, over } = event;
-    if (!over || active.id === over.id || !previousBoardData) return;
-
-    const finalTasksByStatus = previousBoardData.tasks.reduce((acc, task) => {
-        (acc[task.status] = acc[task.status] || []).push(task);
-        return acc;
-    }, {} as Record<TaskStatus, TaskWithAssignee[]>);
-
-    const tasksToUpdate: {id: string; position: number; status: TaskStatus}[] = [];
-    Object.values(finalTasksByStatus).forEach(columnTasks => {
-        columnTasks.forEach((task, index) => {
-            tasksToUpdate.push({ id: task.id, position: index, status: task.status });
-        });
-    });
-
-    try {
-        if (tasksToUpdate.length > 0) {
-          const response = await fetch('/api/tasks/update-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tasksToUpdate),
-          });
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to save changes.");
-          }
-          toast.success( "Board updated successfully!" );
-        }
-    } catch (error: any) {
-        toast.error(
-           "Could not save task arrangement. Please refresh.",
-        );
-        setBoardData(previousBoardData);
-    }
-  }
+    toast.success("Task created successfully!");
+  };
 
   const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
     if (!boardData) return;
@@ -187,14 +113,143 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates),
         });
-        if (!response.ok) throw new Error("Failed to update task");
-        toast.success("Task updated successfully!" );
-        fetchBoardData();
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to update task");
+        }
+        toast.success("Task updated successfully!");
+        fetchBoardData(); // Refetching can be acceptable for single updates if needed
     } catch (error) {
-        toast.error("Update Failed" );
+        if (error instanceof Error) {
+            toast.error(error.message);
+        } else {
+            toast.error("An unknown error occurred during update.");
+        }
         setBoardData(previousBoardData);
     }
   };
+
+  function handleDragStart(event: DragStartEvent) {
+    if (event.active.data.current?.type === 'Task') {
+      const task = event.active.data.current.task as TaskWithAssignee;
+      setActiveTask(task);
+      
+      const status = task.status;
+      const index = tasksByStatus[status]?.findIndex(t => t.id === task.id) ?? -1;
+      if (index !== -1) {
+          setOriginalTaskPosition({ status, index });
+      }
+    }
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over || !over.data.current || active.id === over.id) return;
+  
+    const isActiveATask = active.data.current?.type === 'Task';
+    if (!isActiveATask) return;
+  
+    setBoardData(board => {
+        if (!board) return null;
+  
+        const activeTaskIndex = board.tasks.findIndex(t => t.id === active.id);
+        if (activeTaskIndex === -1) return board;
+
+        let overStatus: TaskStatus;
+        const isOverAColumn = over.data.current?.type === "Column";
+        const isOverATask = over.data.current?.type === "Task";
+
+        if (isOverAColumn) {
+            overStatus = over.id as TaskStatus;
+        } else if (isOverATask && over.data.current?.task) {
+            overStatus = over.data.current.task.status;
+        } else {
+            return board;
+        }
+        
+        const activeTask = board.tasks[activeTaskIndex];
+
+        if (activeTask.status !== overStatus) {
+            const newTasks = [...board.tasks];
+            newTasks[activeTaskIndex] = { ...newTasks[activeTaskIndex], status: overStatus };
+            return { ...board, tasks: newTasks };
+        }
+        
+        if (isOverATask) {
+            const overTaskIndex = board.tasks.findIndex((t) => t.id === over.id);
+            if (activeTaskIndex !== overTaskIndex && board.tasks[activeTaskIndex].status === board.tasks[overTaskIndex].status) {
+                const reorderedTasks = arrayMove(board.tasks, activeTaskIndex, overTaskIndex);
+                return { ...board, tasks: reorderedTasks };
+            }
+        }
+
+        return board;
+    });
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    setActiveTask(null);
+
+    const { active, over } = event;
+    if (!over || !originalTaskPosition || !boardData) {
+        setOriginalTaskPosition(null);
+        return;
+    }
+    
+    // The UI has already been updated optimistically by handleDragOver.
+    // This function's job is to persist the final state.
+    const finalTasksState = boardData.tasks;
+    const movedTask = finalTasksState.find(t => t.id === active.id);
+
+    if (!movedTask) {
+        setOriginalTaskPosition(null);
+        return;
+    }
+
+    const finalStatus = movedTask.status;
+    const tasksInFinalColumn = finalTasksState.filter(t => t.status === finalStatus);
+    const finalIndex = tasksInFinalColumn.findIndex(t => t.id === active.id);
+    
+    if (originalTaskPosition.status === finalStatus && originalTaskPosition.index === finalIndex) {
+        setOriginalTaskPosition(null);
+        return;
+    }
+    
+    setOriginalTaskPosition(null);
+
+    const tasksToUpdate = tasksInFinalColumn.map((task, index) => ({
+      id: task.id,
+      status: task.status,
+      position: index,
+    }));
+
+    try {
+      if (tasksToUpdate.length > 0) {
+        const response = await fetch('/api/tasks/update-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tasks: tasksToUpdate, column: finalStatus }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to save changes.");
+        }
+        
+        // ✨ FIX: Do NOT refetch data on success. The optimistic UI is already correct.
+        // Simply show a success message. The backend can provide this.
+        const result = await response.json();
+        // toast.success(result.message || "Board updated!");
+        
+        // ❌ REMOVED THIS LINE: fetchBoardData();
+      }
+    } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Could not save task arrangement.");
+        
+        // ✨ CORRECT: ONLY refetch data on FAILURE to revert the UI changes.
+        fetchBoardData();
+    }
+  }
 
   if (isLoading) {
     return <div className="flex h-full items-center justify-center text-foreground">Loading Board...</div>;
@@ -205,74 +260,72 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
 
   return (
     <ProjectContext.Provider value={{ workspaceId: boardData.workspaceId, projectId }}>
-
-    <div className="p-4 md:p-6 h-full flex flex-col bg-background text-foreground">
-      <header className="flex items-center justify-between mb-4 pb-2 border-b">
-        <h1 className="text-2xl font-bold">{boardData.name} Board</h1>
-        <div className="flex items-center gap-2 p-1 bg-muted rounded-md">
-            <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setViewMode('board')}
-                className={cn( "flex items-center gap-2 px-3", viewMode === 'board' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground' )}
-            >
-                <LayoutGrid className="h-4 w-4" />
-                Board
-            </Button>
-            <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setViewMode('table')}
-                className={cn( "flex items-center gap-2 px-3", viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground' )}
-            >
-                <List className="h-4 w-4" />
-                Table
-            </Button>
-        </div>
-      </header>
+      <div className="p-4 md:p-6 h-full flex flex-col bg-background text-foreground">
+        <header className="flex items-center justify-between mb-4 pb-2 border-b">
+          <h1 className="text-2xl font-bold">{boardData.name} Board</h1>
+          <div className="flex items-center gap-2 p-1 bg-muted rounded-md">
+              <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setViewMode('board')}
+                  className={cn( "flex items-center gap-2 px-3", viewMode === 'board' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground' )}
+              >
+                  <LayoutGrid className="h-4 w-4" />
+                  Board
+              </Button>
+              <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className={cn( "flex items-center gap-2 px-3", viewMode === 'table' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground' )}
+              >
+                  <List className="h-4 w-4" />
+                  Table
+              </Button>
+          </div>
+        </header>
         
-      {viewMode === 'board' ? (
-        <DndContext
+        {viewMode === 'board' ? (
+          <DndContext
             sensors={sensors}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
             collisionDetection={closestCorners}
-        >
+          >
             <main className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-6 overflow-x-auto">
-                {BOARD_COLUMNS.map((col) => (
+              {BOARD_COLUMNS.map((col) => (
                 <KanbanColumn
-                    key={col.status}
-                    column={col}
-                    tasks={tasksByStatus[col.status] || []}
-                    projectId={projectId}
-                    currentUserId={currentUserId}
-                    members={boardData.members}
-                    onTaskCreated={fetchBoardData}
+                  key={col.status}
+                  column={col}
+                  tasks={tasksByStatus[col.status] || []}
+                  projectId={projectId}
+                  currentUserId={currentUserId}
+                  members={boardData.members}
+                  onTaskCreated={handleTaskCreated}
                 />
-                ))}
+              ))}
             </main>
             {createPortal(
-                <DragOverlay>
-                    {activeTask ? (
-                      <div className="shadow-2xl rounded-lg transform scale-105">
-                        <SortableTaskCard task={activeTask} isOverlay />
-                      </div>
-                    ) : null}
-                </DragOverlay>,
-                document.body
+              <DragOverlay>
+                {activeTask ? (
+                  <div className="shadow-2xl rounded-lg transform scale-105">
+                    <SortableTaskCard task={activeTask} isOverlay />
+                  </div>
+                ) : null}
+              </DragOverlay>,
+              document.body
             )}
-        </DndContext>
-      ) : (
-        <main className="flex-1 overflow-y-auto">
+          </DndContext>
+        ) : (
+          <main className="flex-1 overflow-y-auto">
             <ProjectTable 
-                tasks={boardData.tasks} 
-                onTaskUpdate={handleTaskUpdate}
+              tasks={boardData.tasks} 
+              onTaskUpdate={handleTaskUpdate}
             />
-        </main>
-      )}
-    </div>
+          </main>
+        )}
+      </div>
     </ProjectContext.Provider>
-
   );
 }

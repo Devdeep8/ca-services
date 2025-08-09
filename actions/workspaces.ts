@@ -15,7 +15,6 @@ export async function getWorkspacesForCurrentUser(): Promise<Workspace[]> {
 
     // 1. Check if the user is authenticated
     if (!session?.user) {
-      console.log('No active session found. User is not authenticated.');
       return []; // Return an empty array if not logged in
     }
 

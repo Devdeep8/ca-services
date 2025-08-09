@@ -44,7 +44,6 @@ export async function POST(
       invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation?token=${invitationToken}`;
     } else {
       tempPassword = crypto.randomBytes(16).toString('hex');
-      console.log(tempPassword, email, 'Generated temporary password');
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
       const newUser = await db.user.create({

@@ -22,7 +22,9 @@ export async function POST(request: NextRequest) {
     const currentUserId = session.user.id;
 
     const body = await request.json();
-    const validation = updateTasksOrderSchema.safeParse(body);
+
+    const {tasks ,column } = body
+    const validation = updateTasksOrderSchema.safeParse(tasks);
 
     if (!validation.success) {
       return new NextResponse(JSON.stringify({ error: 'Invalid input data' }), { status: 400 });

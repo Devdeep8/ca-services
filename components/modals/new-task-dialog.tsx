@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
-
 type MemberWithUser = ProjectMember & { user: User };
 
 const formSchema = z.object({
@@ -34,7 +33,7 @@ interface NewTaskDialogProps {
   status: TaskStatus; // Receives the status directly
   reporterId: string;
   members: MemberWithUser[];
-  onTaskCreated: () => void;
+  onTaskCreated: (newTask : any) => void;
   children: React.ReactNode;
 }
 
@@ -69,9 +68,9 @@ export function NewTaskDialog({
       });
 
       if (!response.ok) throw new Error('Failed to create task');
-      
+      const data  = await response.json()
       form.reset();
-      onTaskCreated();
+      onTaskCreated(data);
       setOpen(false);
     } catch (error) {
       console.error(error);
