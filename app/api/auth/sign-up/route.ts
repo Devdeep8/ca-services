@@ -1,9 +1,6 @@
-import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { signUpSchema } from "@/lib/validations";
-import bcrypt from "bcryptjs";
 import { getUserByEmail } from "@/utils/helper-server-function";
-
+import { validateSignUpInput, hashPassword, createUser } from "@/components/auth-module/auth-helpers";
 /**
  * Handles user sign-up
  * @name POST /api/auth/sign-up
@@ -44,24 +41,4 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export function validateSignUpInput(body: unknown) {
-  const parsed = signUpSchema.safeParse(body);
-  if (!parsed.success) {
-    throw new Error(parsed.error.message || "Invalid input");
-  }
-  return parsed.data;
-}
 
-export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 12);
-}
-
-interface CreateUserParams {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export async function createUser(data: CreateUserParams) {
-  return db.user.create({ data });
-}

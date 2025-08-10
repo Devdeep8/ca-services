@@ -22,14 +22,14 @@ jest.mock("@/utils/helper-server-function", () => ({
 
 // ------------------ IMPORTS AFTER MOCKS ------------------
 import bcrypt from "bcryptjs";
+import { POST } from "@/app/api/auth/sign-up/route";
 import { db } from "@/lib/db";
 import { getUserByEmail } from "@/utils/helper-server-function";
 import {
   validateSignUpInput,
   hashPassword,
   createUser,
-  POST,
-} from "../../api/auth/sign-up/route";
+} from "@/components/auth-module/auth-helpers";
 import { NextResponse } from "next/server";
 import { success } from "zod";
 
