@@ -8,6 +8,7 @@ module.exports = {
     ...tsJestTransformCfg,
   },
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/$1", // No src here since lib/ is at project root
+    "^@/(.*)$": "<rootDir>/$1",
   },
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
 };

@@ -1,0 +1,51 @@
+# .github/workflows/run-integration-tests.yml
+name: Run Integration Tests on Relevant Changes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'prisma/schema.prisma'
+      - 'app/api/auth/sign-up/route.ts'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'prisma/schema.prisma'
+      - 'app/api/auth/sign-up/route.ts'
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack (for Yarn)
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Create .env.production from GitHub Secrets
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}" >> .env.production
+          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env.production
+          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env.production
+          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env.production
+          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env.production
+
+      - name: Run ENV check for production
+        run: yarn check-env:prod
+
+      - name: Run Integration Tests only
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: yarn test --watchAll=false --testPathPattern=".*\\.integration\\.test\\.ts$"

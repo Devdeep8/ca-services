@@ -13,11 +13,6 @@ export async function getUserByEmail(email: string) {
   try {
     const user = await db.user.findUnique({
       where: { email },
-      select:{
-        name: true,
-        email: true,
-        id: true
-      }
     });
 
     if (!user) {

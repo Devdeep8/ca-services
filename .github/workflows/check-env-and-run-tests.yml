@@ -1,4 +1,5 @@
-name: Check Environment Variables and Run Tests
+# .github/workflows/check-env-and-run-tests.yml
+name: Check Environment Variables and Run Tests (excluding integration)
 
 on:
   push:
@@ -9,15 +10,13 @@ on:
       - main
 
 jobs:
-  env-and-test:
-    name: Verify ENV Vars & Run Tests
+  check-env-and-test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -40,7 +39,7 @@ jobs:
       - name: Run ENV check for production
         run: yarn check-env:prod
 
-      - name: Run Tests
+      - name: Run tests (excluding integration tests)
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }} # For DB-related tests
-        run: yarn test --watchAll=false
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: yarn test --watchAll=false --testPathIgnorePatterns=".*\\.integration\\.test\\.ts$"
