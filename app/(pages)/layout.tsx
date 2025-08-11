@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useParams } from "next/navigation"; // 1. Import useParams
+import { ProjectContext } from '@/context/project-context';
+
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -77,6 +79,7 @@ export default function DashboardLayout({
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams(); // 2. Call the hook to get route params
 
   // State for workspaces
   const [workspaces, setWorkspaces] = useState<any[]>([]);
@@ -199,190 +202,194 @@ export default function DashboardLayout({
   ];
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
-        <Sidebar>
-          <SidebarHeader>
-            {/* Workspace Switcher */}
-            {isLoading ? (
-              <div className="p-4">
-                <Skeleton className="h-8 w-full" />
-              </div>
-            ) : (
-              <Popover open={isSwitcherOpen} onOpenChange={setIsSwitcherOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={isSwitcherOpen}
-                    className="w-full justify-between"
-                  >
-                    {currentWorkspace
-                      ? currentWorkspace.name
-                      : "Select workspace..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search workspace..." />
-                    <CommandList>
-                      <CommandEmpty>No workspace found.</CommandEmpty>
-                      <CommandGroup>
-                        {workspaces.map((ws) => (
+    <ProjectContext.Provider
+      value={{
+        workspaceId: params.workspaceId as string,
+        projectId: params.projectId as string,
+      }}
+    >
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
+          <Sidebar>
+            <SidebarHeader>
+              {/* Workspace Switcher */}
+              {isLoading ? (
+                <div className="p-4">
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ) : (
+                <Popover open={isSwitcherOpen} onOpenChange={setIsSwitcherOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={isSwitcherOpen}
+                      className="w-full justify-between"
+                    >
+                      {currentWorkspace
+                        ? currentWorkspace.name
+                        : "Select workspace..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search workspace..." />
+                      <CommandList>
+                        <CommandEmpty>No workspace found.</CommandEmpty>
+                        <CommandGroup>
+                          {workspaces.map((ws) => (
+                            <CommandItem
+                              key={ws.id}
+                              onSelect={() => handleSwitchWorkspace(ws.id)}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  currentWorkspace?.id === ws.id
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                }`}
+                              />
+                              {ws.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                      <CommandList>
+                        <CommandGroup>
                           <CommandItem
-                            key={ws.id}
-                            onSelect={() => handleSwitchWorkspace(ws.id)}
+                            onSelect={() => {
+                              setIsSwitcherOpen(false);
+                              setIsAddWorkspaceOpen(true);
+                            }}
                           >
-                            <Check
-                              className={`mr-2 h-4 w-4 ${
-                                currentWorkspace?.id === ws.id
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              }`}
-                            />
-                            {ws.name}
+                            <Plus className="mr-2 h-4 w-4" />
+                            <span>Add Workspace</span>
                           </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                    <CommandList>
-                      <CommandGroup>
-                        <CommandItem
-                          onSelect={() => {
-                            setIsSwitcherOpen(false);
-                            setIsAddWorkspaceOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          <span>Add Workspace</span>
-                        </CommandItem>
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            )}
-          </SidebarHeader>
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </SidebarHeader>
 
-          <SidebarContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <Link href={item.href} className="w-full">
-                    <SidebarMenuButton isActive={pathname === item.href}>
-                      <item.icon className="mr-3 h-5 w-5" />
-                      {item.name}
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarContent>
+            <SidebarContent>
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.name}>
+                    <Link href={item.href} className="w-full">
+                      <SidebarMenuButton isActive={pathname === item.href}>
+                        <item.icon className="mr-3 h-5 w-5" />
+                        {item.name}
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarContent>
 
-          {/* User info and sign out at the bottom */}
-          <div className="p-4 border-t mt-auto">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start h-auto px-2 py-2"
-                >
-                  <div className="flex items-center space-x-3 w-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src={session.user?.image || ""}
-                        alt={session.user?.name || "User"}
-                      />
-                      <AvatarFallback>
-                        {getInitials(session.user?.name || "")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-medium text-gray-900 truncate dark:text-gray-100">
+            {/* User info and sign out at the bottom */}
+            <div className="p-4 border-t mt-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start h-auto px-2 py-2"
+                  >
+                    <div className="flex items-center space-x-3 w-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={session.user?.image || ""}
+                          alt={session.user?.name || "User"}
+                        />
+                        <AvatarFallback>
+                          {getInitials(session.user?.name || "")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-sm font-medium text-gray-900 truncate dark:text-gray-100">
+                          {session.user?.name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate dark:text-gray-400">
+                          {session.user?.email}
+                        </p>
+                      </div>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
                         {session.user?.name}
                       </p>
-                      <p className="text-xs text-gray-500 truncate dark:text-gray-400">
+                      <p className="text-xs leading-none text-muted-foreground">
                         {session.user?.email}
                       </p>
                     </div>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {session.user?.name}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {session.user?.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => signOut({ callbackUrl: "/sign-in" })}
-                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </Sidebar>
-
-        {/* Main Content Area */}
-        {/* <Header session={session} /> */}
-
-         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header session={session}  />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            {children}
-          </main>
-        </div>
-      </div>
-      {/* </div> */}
-
-      {/* Add Workspace Dialog */}
-      <Dialog open={isAddWorkspaceOpen} onOpenChange={setIsAddWorkspaceOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Workspace</DialogTitle>
-            <DialogDescription>
-              Give your new workspace a name. You can change this later.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleAddWorkspace}>
-            <div className="grid gap-4 py-4">
-              <input
-                id="name"
-                className="border rounded px-3 py-2 text-sm w-full"
-                placeholder="e.g., Marketing Team"
-                value={newWorkspaceName}
-                onChange={(e) => setNewWorkspaceName(e.target.value)}
-                autoFocus
-              />
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => signOut({ callbackUrl: "/sign-in" })}
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setIsAddWorkspaceOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !newWorkspaceName}
-              >
-                {isSubmitting ? "Adding..." : "Add Workspace"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </SidebarProvider>
+          </Sidebar>
+
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Header session={session} />
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+              {children}
+            </main>
+          </div>
+        </div>
+
+        {/* Add Workspace Dialog */}
+        <Dialog open={isAddWorkspaceOpen} onOpenChange={setIsAddWorkspaceOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Workspace</DialogTitle>
+              <DialogDescription>
+                Give your new workspace a name. You can change this later.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAddWorkspace}>
+              <div className="grid gap-4 py-4">
+                <input
+                  id="name"
+                  className="border rounded px-3 py-2 text-sm w-full"
+                  placeholder="e.g., Marketing Team"
+                  value={newWorkspaceName}
+                  onChange={(e) => setNewWorkspaceName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setIsAddWorkspaceOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !newWorkspaceName}
+                >
+                  {isSubmitting ? "Adding..." : "Add Workspace"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </SidebarProvider>
+    </ProjectContext.Provider>
   );
 }
