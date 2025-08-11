@@ -10,6 +10,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {  CoinsIcon, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { Plus, Briefcase, FolderKanban, LayoutGrid, List, User as UserIcon } from 'lucide-react'
 import { CreateProjectModal } from '@/components/modals/CreateProjectModal'
 import { Badge } from "@/components/ui/badge"
@@ -111,6 +118,8 @@ useEffect(() => {
     localStorage.setItem('projectView', newView);
   };
 
+  console.log(projects);
+
   if (isLoading) {
     return <DashboardLoader />;
   }
@@ -171,29 +180,69 @@ useEffect(() => {
 
 // --- Components ---
 
+
 const ProjectCard = ({ project, workspaceId }: { project: Project; workspaceId: string }) => (
-  <Link href={`/projects/${project.id}?workspaceId=${workspaceId}`} className="contents">
-    <Card className="hover:shadow-md transition-shadow flex flex-col cursor-pointer">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-primary" />
-            <span>{project.name}</span>
+
+   <Link
+      href={`/projects/${project.id}?workspaceId=${workspaceId}`}
+      className="contents"
+    >
+      <Card className="hover:shadow-md transition-shadow flex flex-col cursor-pointer">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-primary" />
+              <span className="font-semibold">{project.name}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Badge variant={project.status === "ACTIVE" ? "success" : "secondary"}>
+                {project.status}
+              </Badge>
+              {/* --- Dropdown Menu Start --- */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  {/* We stop propagation here to prevent the Link from firing */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className="h-8 w-8"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Open project menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  // Stop propagation for the content as well
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <DropdownMenuItem onClick={() => window.location.assign(`/projects/${project.id}/edit`)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    <span>Edit</span>
+                  </DropdownMenuItem>
+                
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {/* --- Dropdown Menu End --- */}
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow flex flex-col justify-end">
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <span className="font-semibold">Lead:</span>
+            <UserAvatar user={project.lead} />
+            <span>{project.lead?.name || "N/A"}</span>
           </div>
-          <Badge variant={project.status === "ACTIVE" ? "success" : "secondary"}>
-            {project.status}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow flex flex-col justify-end">
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <span className="font-semibold">Lead:</span>
-          <UserAvatar user={project.lead} />
-          <span>{project.lead?.name || "N/A"}</span>
-        </div>
-      </CardContent>
-    </Card>
-  </Link>
+        </CardContent>
+      </Card>
+    </Link>
 );
 
 const ProjectTable = ({ projects, workspaceId }: { projects: Project[]; workspaceId: string }) => {

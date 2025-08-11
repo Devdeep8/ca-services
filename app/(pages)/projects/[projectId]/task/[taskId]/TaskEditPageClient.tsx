@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TimeTracking } from "./time-tracking";
+import { set } from "zod";
 
 // A type for project members that includes the nested user object
 type MemberWithUser = User 
@@ -65,6 +66,7 @@ export function TaskEditPageClient({
   const [task, setTask] = useState<ClientTask>(initialTask);
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
 
   const handleTaskUpdate = async (updates: Partial<ClientTask>) => {
     const previousTask = { ...task };
@@ -131,6 +133,25 @@ export function TaskEditPageClient({
 
   const statusOrder = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW, TaskStatus.DONE];
   const priorityOrder = [Priority.URGENT, Priority.HIGH, Priority.MEDIUM, Priority.LOW];
+
+
+
+
+  const handleDeleteTask = async (taskId: string) => {
+    setIsDeletingTask(true);
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/delete-task`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete task.");
+      toast.success("Task deleted successfully.");
+      router.push(`/projects`);
+      setIsDeletingTask(false);
+    } catch (error) {
+      toast.error("Deletion Failed", { description: (error as Error).message });
+      setIsDeletingTask(false);
+    }
+  }
 
   return (
     <div className="flex h-full p-4 md:p-6 text-foreground bg-background">
@@ -247,7 +268,7 @@ export function TaskEditPageClient({
           </Popover>
         </div>
         <div className="pt-6">
-          <Button variant="destructive" className="w-full">
+          <Button variant="destructive" className="w-full" disabled={isDeletingTask} onClick={() => handleDeleteTask(task.id)}>
             <Trash2 className="mr-2 h-4 w-4" /> Delete Task
           </Button>
         </div>

@@ -5,88 +5,103 @@ import { authOptions } from "@/lib/auth";
 import { z } from "zod";
 import { getUserByEmail } from "@/utils/helper-server-function";
 import { error } from "console";
-// Fetches all projects for a given workspace.
+
+/**
+ * Fetches all projects for a given workspace, correctly identifying the project lead.
+ */
 export async function GET(req: NextRequest) {
-    const session = await getServerSession(authOptions);
-  
-    // 1. Validate session
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await getServerSession(authOptions);
+
+  // 1. Validate session
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userData = await getUserByEmail(session.user.email);
+  const userId = userData.user?.id;
+
+  if (!userId) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  // 2. Get workspaceId from query params
+  const { searchParams } = new URL(req.url);
+  const workspaceId = searchParams.get("workspaceId");
+
+  if (!workspaceId) {
+    return NextResponse.json(
+      { error: "Workspace ID is required" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // 3. Ensure the user is a member of the workspace
+    const member = await db.workspaceMember.findFirst({
+      where: {
+        workspaceId: workspaceId,
+        userId: userId,
+      },
+    });
+
+    if (!member) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    const userData = await getUserByEmail(session?.user?.email as string);
-    const userId = userData.user?.id
-  
-    // 2. Get workspaceId from query params
-    const { searchParams } = new URL(req.url);
-    const workspaceId = searchParams.get("workspaceId");
-  
-    if (!workspaceId) {
-      return NextResponse.json(
-        { error: "Workspace ID is required" },
-        { status: 400 }
-      );
-    }
-  
-    try {
-      // 3. Ensure the user is a member of the workspace
-      const member = await db.workspaceMember.findFirst({
-        where: {
-          workspaceId: workspaceId,
-          userId: userId,
-        },
-      });
-  
-      if (!member) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-  
-      // 4. Fetch projects and include related creator and members with the 'OWNER' role
-      const projectsFromDb = await db.project.findMany({
-        where: {
-          workspaceId: workspaceId,
-        },
-        include: {
-            
-          // Include the user who created the project
-          creator: {
-            select: {
-              name: true,
-              avatar: true,
-            },
+
+    // 4. Fetch projects
+    const projectsFromDb = await db.project.findMany({
+      where: {
+        workspaceId: workspaceId,
+      },
+      include: {
+        // Include the user who created the project
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
           },
-          // Include members who are designated as owners to identify the lead
-          members: {
-            select: {
-              user: {
-                select: {
-                  name: true,
-                },
+        },
+        // ✅ FIX: Specifically include ONLY the member with the 'LEAD' role
+        members: {
+          where: {
+            role: "LEAD", // This filter is the key to the solution
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
               },
             },
           },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-  
-      // 5. Process the data to create a consistent 'lead' field for the frontend
-      const projects = projectsFromDb.map((p) => {
-        // The lead is the first member with the 'OWNER' role, or the creator as a fallback.
-        const lead = p.members.length > 0 ? p.members[0].user : p.creator;
-        const { members, ...projectData } = p;
-        return { ...projectData, lead };
-      });
-  
-      return NextResponse.json({ projects });
-    } catch (error) {
-      console.error("Failed to fetch projects:", error);
-      return NextResponse.json(
-        { error: "Internal Server Error" },
-        { status: 500 }
-      );
-    }
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // 5. Process the data to create a consistent 'lead' field for the frontend
+    const projects = projectsFromDb.map((p) => {
+      // This logic is now reliable because `p.members` will only contain the lead (or be empty)
+      const lead = p.members.length > 0 ? p.members[0].user : p.creator;
+      
+      // We no longer need the 'members' array on the final project object
+      const { members, ...projectData } = p;
+      
+      return { ...projectData, lead };
+    });
+
+    return NextResponse.json({ projects });
+  } catch (error) {
+    console.error("Failed to fetch projects:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
+}
 // --- POST /api/projects ---
 // Creates a new project with default values.
 export async function POST(req: NextRequest) {
