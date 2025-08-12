@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {  CoinsIcon, MoreHorizontal, Pencil, Trash } from "lucide-react";
+import {  CoinsIcon, MoreHorizontal, MoreVertical, Pencil, Trash } from "lucide-react";
 import { Plus, Briefcase, FolderKanban, LayoutGrid, List, User as UserIcon } from 'lucide-react'
 import { CreateProjectModal } from '@/components/modals/CreateProjectModal'
 import { Badge } from "@/components/ui/badge"
@@ -118,12 +118,13 @@ useEffect(() => {
     localStorage.setItem('projectView', newView);
   };
 
-  console.log(projects);
+  // console.log(projects);
 
   if (isLoading) {
     return <DashboardLoader />;
   }
 
+  console.log(workspace);
   if (!workspace) {
     return (
       <div className="flex items-center justify-center h-full text-center">
@@ -223,7 +224,7 @@ const ProjectCard = ({ project, workspaceId }: { project: Project; workspaceId: 
                     e.stopPropagation();
                   }}
                 >
-                  <DropdownMenuItem onClick={() => window.location.assign(`/projects/${project.id}/edit`)}>
+                  <DropdownMenuItem className='cursor-pointer' onClick={() => window.location.assign(`/projects/${project.id}/edit`)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     <span>Edit</span>
                   </DropdownMenuItem>
@@ -257,6 +258,7 @@ const ProjectTable = ({ projects, workspaceId }: { projects: Project[]; workspac
             <TableHead>Lead</TableHead>
             <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
             <TableHead className="text-right">Status</TableHead>
+            <TableHead className='text-right'>Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -280,6 +282,40 @@ const ProjectTable = ({ projects, workspaceId }: { projects: Project[]; workspac
                 <Badge variant={project.status === "ACTIVE" ? "success" : "secondary"}>
                   {project.status}
                 </Badge>
+              </TableCell>
+              <TableCell className='text-right'>
+                  <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  {/* We stop propagation here to prevent the Link from firing */}
+                  <Button
+
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className="h-8 w-8"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                    <span className="sr-only">Open project menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  // Stop propagation for the content as well
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.assign(`/projects/${project.id}/edit`)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    <span>Edit</span>
+                  </DropdownMenuItem>
+                
+                </DropdownMenuContent>
+              </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
@@ -337,7 +373,7 @@ const ProjectGridLoader = () => (
 
 const ProjectTableLoader = () => (
   <div className="space-y-2">
-    <Skeleton className="h-12 w-full" />
+    <Skeleton className="h-12 w-full " />
     <Skeleton className="h-12 w-full" />
     <Skeleton className="h-12 w-full" />
     <Skeleton className="h-12 w-full" />

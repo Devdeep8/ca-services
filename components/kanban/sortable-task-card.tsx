@@ -33,7 +33,7 @@ const priorityStyles: Record<Priority, string> = {
 function TaskCard({ task  , projectId , workspaceId}: { task: TaskWithAssignee , projectId : string  , workspaceId : string}) {
     return (
         <Link href={`/projects/${projectId}/task/${task.id}?workspaceId=${workspaceId}`}>
-    <Card className="bg-card border-border hover:bg-accent transition-colors">
+    <Card className="bg-card border-border hover:bg-accent hover:scale-105">
       <CardContent className="p-3">
         <p className="font-semibold text-sm text-card-foreground">{task.title}</p>
         <div className="flex justify-between items-center mt-3">

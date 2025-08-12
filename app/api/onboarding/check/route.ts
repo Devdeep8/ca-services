@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { getWorkspacesForCurrentUser } from "@/actions/workspaces";
 
 /**
  * Checks if the current user belongs to any workspace.
@@ -27,7 +28,11 @@ export async function GET(req: NextRequest) {
     where: {
       userId: userId,
     },
-    // Optional: order by when they joined to consistently get their first workspace
+
+    include:{
+      workspace: true
+    },
+    // Op tional: order by when they joined to consistently get their first workspace
     orderBy: {
       joinedAt: 'asc',
     },
@@ -36,7 +41,9 @@ export async function GET(req: NextRequest) {
   // If a membership record exists, the user is part of at least one workspace.
   if (firstMembership) {
     // Return the ID of that workspace.
-    return NextResponse.json({ workspaceId: firstMembership.workspaceId });
+    return NextResponse.json({ workspaceId: firstMembership.workspaceId ,
+      workspaceName: firstMembership.workspace.name
+     });
   }
   
   // If no membership is found, the user has not created or joined any workspace yet.

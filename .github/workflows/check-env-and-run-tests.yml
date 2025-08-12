@@ -42,4 +42,4 @@ jobs:
       - name: Run tests (excluding integration tests)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: yarn test --watchAll=false --testPathIgnorePatterns=".*\\.integration\\.test\\.ts$"
+        run: yarn test

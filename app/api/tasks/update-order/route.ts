@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TaskStatus } from '@prisma/client';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { TaskStatus } from '@prisma/client';
+
+// Import our new services and custom error
+import { authorizeTaskUpdate, AuthorizationError } from '@/services/task-service/auth.service';
+import { updateTaskOrder } from '@/services/task-service/task.service';
 
 const updateTasksOrderSchema = z.array(
   z.object({
@@ -15,66 +18,41 @@ const updateTasksOrderSchema = z.array(
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. AUTHENTICATION (Controller's job)
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
     const currentUserId = session.user.id;
 
+    // 2. INPUT VALIDATION (Controller's job)
     const body = await request.json();
-
-    const {tasks ,column } = body
-    const validation = updateTasksOrderSchema.safeParse(tasks);
-
-    if (!validation.success) {
-      return new NextResponse(JSON.stringify({ error: 'Invalid input data' }), { status: 400 });
-    }
-    const tasksToUpdate = validation.data;
+    const tasksToUpdate = updateTasksOrderSchema.parse(body.tasks); // .parse throws on failure
     
     if (tasksToUpdate.length === 0) {
-        return NextResponse.json({ success: true, message: 'No tasks to update' });
+      return NextResponse.json({ success: true, message: 'No tasks to update' });
     }
 
-    // Authorization Check: Ensure the user is a member of the project.
-    const firstTaskId = tasksToUpdate[0].id;
-    const task = await db.task.findUnique({
-        where: { id: firstTaskId },
-        select: { projectId: true }
-    });
+    // 3. AUTHORIZATION (Delegated to a service)
+    await authorizeTaskUpdate(currentUserId, tasksToUpdate);
 
-    if (!task) {
-        return new NextResponse(JSON.stringify({ error: 'Task not found' }), { status: 404 });
-    }
+    // 4. EXECUTION (Delegated to a service)
+    await updateTaskOrder(tasksToUpdate);
 
-    const membership = await db.projectMember.findUnique({
-        where: {
-            projectId_userId: {
-                projectId: task.projectId,
-                userId: currentUserId,
-            }
-        }
-    });
-    
-    if (!membership) {
-        return new NextResponse(JSON.stringify({ error: 'You do not have permission to modify tasks in this project.' }), { status: 403 });
-    }
-
-    // Database Transaction to update all tasks at once.
-    await db.$transaction(async (tx) => {
-      for (const taskUpdate of tasksToUpdate) {
-        await tx.task.update({
-          where: { id: taskUpdate.id },
-          data: {
-            position: taskUpdate.position,
-            status: taskUpdate.status,
-          },
-        });
-      }
-    });
-
+    // 5. RESPONSE (Controller's job)
     return NextResponse.json({ success: true, message: 'Tasks updated successfully' });
+
   } catch (error) {
+    // 6. ERROR HANDLING (Controller's job)
     console.error('[TASKS_UPDATE_ORDER_POST]', error);
+
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify({ error: 'Invalid input data', details: error.issues }), { status: 400 });
+    }
+    if (error instanceof AuthorizationError) {
+      return new NextResponse(JSON.stringify({ error: error.message }), { status: 403 });
+    }
+    
     return new NextResponse(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
   }
 }

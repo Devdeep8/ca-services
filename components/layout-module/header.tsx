@@ -50,9 +50,9 @@ export function Header({ session }: { session: any }) {
       
       {/* Left Section: Logo and App Name */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon">
+        {/* <Button variant="ghost" size="icon">
           <LayoutGrid className="h-5 w-5" />
-        </Button>
+        </Button> */}
         <Link href="/" className="flex items-center gap-2">
           <Wind className="h-6 w-6 text-blue-600" />
           <span className="text-lg font-semibold text-gray-800 dark:text-white">

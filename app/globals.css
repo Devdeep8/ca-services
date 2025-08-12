@@ -3,6 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* This block allows Tailwind to understand your CSS variables for utility classes like `bg-primary` */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -35,108 +36,107 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--accent);
+  --color-sidebar-accent-foreground: var(--accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* 🎨 --- LIGHT MODE THEME --- */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.521 0.152 43.2); /* #C8612B - Primary orange-brown */
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.355 0.198 265.8); /* #2832B1 - Secondary blue */
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.355 0.198 265.8); /* #2832B1 - Accent blue */
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.521 0.152 43.2); /* Ring color matches primary */
-  --chart-1: oklch(0.521 0.152 43.2); /* #C8612B */
-  --chart-2: oklch(0.355 0.198 265.8); /* #2832B1 */
-  --chart-3: oklch(0.6 0.1 43.2); /* Lighter variant of primary */
-  --chart-4: oklch(0.45 0.15 265.8); /* Darker variant of secondary */
-  --chart-5: oklch(0.7 0.08 43.2); /* Even lighter primary variant */
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.521 0.152 43.2); /* #C8612B */
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.355 0.198 265.8); /* #2832B1 */
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.521 0.152 43.2);
+  --radius: 0.75rem; /* A slightly more modern, rounded feel */
+
+  /* Neutrals - Subtle cool gray palette */
+  --background: oklch(99.1% 0.005 240); /* Almost white */
+  --foreground: oklch(14% 0.01 240);   /* Dark gray for text */
+  --card: oklch(100% 0 0);              /* Pure white for cards to pop */
+  --card-foreground: oklch(14% 0.01 240);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(14% 0.01 240);
+  --border: oklch(92% 0.005 240);
+  --input: oklch(92% 0.005 240);
+  --muted: oklch(95% 0.005 240);
+  --muted-foreground: oklch(45% 0.01 240);
+
+  /* Brand & Action Colors */
+  --primary: oklch(59.34% 0.158 44.25);    /* #C8612B - Brand Orange */
+  --primary-foreground: oklch(98% 0 0);     /* White text for high contrast on orange */
+  --secondary: oklch(36.19% 0.196 265.51); /* #2832B1 - Brand Blue */
+  --secondary-foreground: oklch(98% 0 0);  /* White text for high contrast on blue */
+  --accent: oklch(94% 0.01 240);           /* ✨ New Accent: A clean, light gray for highlights */
+  --accent-foreground: oklch(14% 0.01 240); /* ✨ Dark text for contrast on the light gray accent */
+  --destructive: oklch(62.8% 0.224 25.5);  /* A vibrant, accessible red */
+  --ring: oklch(59.34% 0.158 44.25);       /* ✨ Focus rings use the primary orange for high visibility */
+
+  /* Chart Colors */
+  --chart-1: oklch(59.34% 0.158 44.25);    /* Brand Orange */
+  --chart-2: oklch(36.19% 0.196 265.51);  /* Brand Blue */
+  --chart-3: oklch(75.95% 0.17 63.87);    /* A complementary gold/yellow */
+  --chart-4: oklch(67.73% 0.19 143.12);   /* A complementary sea green */
+  --chart-5: oklch(55% 0.22 290);         /* A complementary purple */
+
+  /* Sidebar Specific (Example) */
+  --sidebar: oklch(98% 0.005 240);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
+
+/* 🎨 --- DARK MODE THEME --- */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.651 0.152 43.2); /* Lighter version of #C8612B for dark mode */
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.455 0.198 265.8); /* Lighter version of #2832B1 for dark mode */
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.455 0.198 265.8); /* Lighter blue for dark mode */
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.651 0.152 43.2); /* Ring color matches primary */
-  --chart-1: oklch(0.651 0.152 43.2); /* Lighter #C8612B for dark mode */
-  --chart-2: oklch(0.455 0.198 265.8); /* Lighter #2832B1 for dark mode */
-  --chart-3: oklch(0.7 0.12 43.2);
-  --chart-4: oklch(0.5 0.18 265.8);
-  --chart-5: oklch(0.75 0.1 43.2);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.651 0.152 43.2); /* Lighter #C8612B for dark sidebar */
-  --sidebar-primary-foreground: oklch(0.145 0 0);
-  --sidebar-accent: oklch(0.455 0.198 265.8); /* Lighter #2832B1 for dark sidebar */
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.651 0.152 43.2);
+  /* Neutrals - Inverted cool gray palette */
+  --background: oklch(10% 0.01 240);    /* Very dark blue-gray */
+  --foreground: oklch(95% 0.005 240);  /* Light gray text */
+  --card: oklch(15% 0.01 240);         /* Slightly lighter than background */
+  --card-foreground: oklch(95% 0.005 240);
+  --popover: oklch(15% 0.01 240);
+  --popover-foreground: oklch(95% 0.005 240);
+  --border: oklch(25% 0.01 240);
+  --input: oklch(25% 0.01 240);
+  --muted: oklch(25% 0.01 240);
+  --muted-foreground: oklch(60% 0.01 240);
+
+  /* Brand & Action Colors - Lightened for dark background */
+  --primary: oklch(68% 0.158 44.25);      /* Lighter orange for dark mode */
+  --primary-foreground: oklch(15% 0 0);    /* Dark text for high contrast */
+  --secondary: oklch(55% 0.196 265.51);   /* Lighter blue for dark mode */
+  --secondary-foreground: oklch(98% 0 0);
+  --accent: oklch(28% 0.01 240);          /* ✨ New Accent: A clear, dark gray for highlights */
+  --accent-foreground: oklch(95% 0.005 240);/* ✨ Light text for contrast on the dark gray accent */
+  --destructive: oklch(70% 0.22 25.5);    /* Lighter red for dark mode */
+  --ring: oklch(68% 0.158 44.25);         /* ✨ Focus rings use the lighter primary orange */
+
+  /* Chart Colors for Dark Mode */
+  --chart-1: oklch(68% 0.158 44.25);      /* Lighter Brand Orange */
+  --chart-2: oklch(55% 0.196 265.51);    /* Lighter Brand Blue */
+  --chart-3: oklch(80% 0.17 63.87);      /* Lighter Gold */
+  --chart-4: oklch(72% 0.19 143.12);     /* Lighter Green */
+  --chart-5: oklch(65% 0.22 290);        /* Lighter Purple */
+
+  /* Sidebar Specific (Example) */
+  --sidebar: oklch(15% 0.01 240);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
+
+/* --- Base Styles --- */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-  }
-}
-
-/* Additional brand color utilities */
-@layer utilities {
-  .text-brand-primary {
-    color: oklch(0.521 0.152 43.2); /* #C8612B */
-  }
-  .text-brand-secondary {
-    color: oklch(0.355 0.198 265.8); /* #2832B1 */
-  }
-  .bg-brand-primary {
-    background-color: oklch(0.521 0.152 43.2); /* #C8612B */
-  }
-  .bg-brand-secondary {
-    background-color: oklch(0.355 0.198 265.8); /* #2832B1 */
-  }
-  .border-brand-primary {
-    border-color: oklch(0.521 0.152 43.2); /* #C8612B */
-  }
-  .border-brand-secondary {
-    border-color: oklch(0.355 0.198 265.8); /* #2832B1 */
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
