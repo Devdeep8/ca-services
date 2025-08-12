@@ -1,3 +1,4 @@
+// components/ProjectBoard.tsx
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -19,7 +20,9 @@ import { KanbanColumn } from './kanban-column';
 import { SortableTaskCard } from './sortable-task-card';
 import { ProjectTable } from './project-table';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, List } from 'lucide-react';
+// ✨ 1. ADD NEW IMPORTS
+import { LayoutGrid, List, CalendarDays } from 'lucide-react';
+import { differenceInDays, isPast, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { ProjectContext } from '@/context/project-context';
@@ -33,6 +36,7 @@ const BOARD_COLUMNS = [
 
 type TaskWithAssignee = Task & { assignee: { id: string; name: string | null; avatar: string | null } | null };
 type MemberWithUser = ProjectMember & { user: User };
+// ✨ Make sure the `dueDate` property is available on your BoardData type
 type BoardData = Project & { tasks: TaskWithAssignee[]; members: MemberWithUser[] };
 
 interface ProjectBoardProps {
@@ -66,6 +70,42 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
   useEffect(() => {
     if (projectId) fetchBoardData();
   }, [projectId]);
+  
+  // ✨ 2. ADD DUE DATE STATUS FUNCTION
+  const getDueDateStatus = () => {
+    if (!boardData?.dueDate) {
+      return null;
+    }
+    const dueDate = new Date(boardData.dueDate);
+    const today = new Date();
+    const daysLeft = differenceInDays(dueDate, today);
+
+    if (isToday(dueDate)) {
+      return (
+        <span className="flex items-center gap-2 text-sm font-bold text-amber-500">
+          <CalendarDays className="h-4 w-4" />
+          Due Today
+        </span>
+      );
+    }
+
+    if (isPast(dueDate)) {
+      return (
+        <span className="flex items-center gap-2 text-sm font-bold text-red-500">
+          <CalendarDays className="h-4 w-4" />
+          {Math.abs(daysLeft)} {Math.abs(daysLeft) === 1 ? 'day' : 'days'} overdue
+        </span>
+      );
+    }
+
+    return (
+      <span className="flex items-center gap-2 text-sm font-bold text-green-600">
+        <CalendarDays className="h-4 w-4" />
+        {daysLeft + 1} {daysLeft + 1 === 1 ? 'day' : 'days'} left
+      </span>
+    );
+  };
+
 
   const tasksByStatus = useMemo(() => {
     const initial: Record<TaskStatus, TaskWithAssignee[]> = {
@@ -118,7 +158,7 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
             throw new Error(errorData.error || "Failed to update task");
         }
         toast.success("Task updated successfully!");
-        fetchBoardData(); // Refetching can be acceptable for single updates if needed
+        fetchBoardData();
     } catch (error) {
         if (error instanceof Error) {
             toast.error(error.message);
@@ -196,8 +236,6 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
         return;
     }
     
-    // The UI has already been updated optimistically by handleDragOver.
-    // This function's job is to persist the final state.
     const finalTasksState = boardData.tasks;
     const movedTask = finalTasksState.find(t => t.id === active.id);
 
@@ -236,17 +274,10 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
             throw new Error(errorData.error || "Failed to save changes.");
         }
         
-        // ✨ FIX: Do NOT refetch data on success. The optimistic UI is already correct.
-        // Simply show a success message. The backend can provide this.
         const result = await response.json();
-        // toast.success(result.message || "Board updated!");
-        
-        // ❌ REMOVED THIS LINE: fetchBoardData();
       }
     } catch (error) {
         toast.error(error instanceof Error ? error.message : "Could not save task arrangement.");
-        
-        // ✨ CORRECT: ONLY refetch data on FAILURE to revert the UI changes.
         fetchBoardData();
     }
   }
@@ -261,8 +292,12 @@ export default function ProjectBoard({ projectId, currentUserId }: ProjectBoardP
   return (
     <ProjectContext.Provider value={{ workspaceId: boardData.workspaceId, projectId }}>
       <div className="p-4 md:p-6 h-full flex flex-col bg-background text-foreground">
+        {/* ✨ 3. UPDATE THE HEADER TO DISPLAY THE STATUS */}
         <header className="flex items-center justify-between mb-4 pb-2 border-b">
-          <h1 className="text-2xl font-bold">{boardData.name} Board</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">{boardData.name} Board</h1>
+            {getDueDateStatus()}
+          </div>
           <div className="flex items-center gap-2 p-1 bg-muted rounded-md">
               <Button 
                   variant="ghost" 

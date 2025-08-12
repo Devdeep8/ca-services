@@ -8,22 +8,22 @@ datasource db {
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId], map: "accounts_userId_fkey")
   @@map("accounts")
 }
 
@@ -32,9 +32,9 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  @@index([userId], map: "sessions_userId_fkey")
   @@map("sessions")
 }
 
@@ -47,48 +47,46 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String?
-  avatar    String?
-  role      Role     @default(MEMBER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  ownedWorkspaces    Workspace[]       @relation("WorkspaceOwner")
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  name                 String
+  password             String?
+  avatar               String?
+  role                 Role                  @default(MEMBER)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  resetToken           String?
+  resetTokenExpiry     DateTime?
+  accounts             Account[]
+  activityLogs         ActivityLog[]
+  projectMemberships   ProjectMember[]
+  Project              Project[]
+  sessions             Session[]
+  attachments          TaskAttachment[]
+  comments             TaskComment[]
+  assignedTasks        Task[]                @relation("TaskAssignee")
+  reportedTasks        Task[]                @relation("TaskReporter")
+  timeEntries          TimeEntry[]
+  WorkspaceInvitation  WorkspaceInvitation[]
   workspaceMemberships WorkspaceMember[]
-  projectMemberships ProjectMember[]
-  assignedTasks      Task[]            @relation("TaskAssignee")
-  reportedTasks      Task[]            @relation("TaskReporter")
-  comments           TaskComment[]
-  timeEntries        TimeEntry[]
-  attachments        TaskAttachment[]
-  activityLogs       ActivityLog[]
-  accounts           Account[]
-  sessions           Session[]
+  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
+
   @@map("users")
-  Project Project[]
-  WorkspaceInvitation WorkspaceInvitation[]
 }
 
 model Workspace {
-  id          String   @id @default(cuid())
+  id          String                @id @default(cuid())
   name        String
   ownerId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  owner     User               @relation("WorkspaceOwner", fields: [ownerId], references: [id])
-  members   WorkspaceMember[]
-  projects  Project[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  projects    Project[]
   invitations WorkspaceInvitation[]
+  members     WorkspaceMember[]
+  owner       User                  @relation("WorkspaceOwner", fields: [ownerId], references: [id])
 
-
+  @@index([ownerId], map: "workspaces_ownerId_fkey")
   @@map("workspaces")
 }
 
@@ -98,99 +96,97 @@ model WorkspaceMember {
   userId      String
   role        WorkspaceRole @default(MEMBER)
   joinedAt    DateTime      @default(now())
-
-  // Relations
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, userId])
+  @@index([userId], map: "workspace_members_userId_fkey")
   @@map("workspace_members")
 }
-model WorkspaceInvitation {
-  id            String   @id @default(cuid())
-  workspaceId   String
-  email         String
-  invitedById   String
-  role          WorkspaceRole @default(MEMBER)
-  token         String   @unique
-  accepted      Boolean  @default(false)
-  temppassword  String?
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
 
-  // Relations
-  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  invitedBy     User      @relation(fields: [invitedById], references: [id])
+model WorkspaceInvitation {
+  id           String        @id @default(cuid())
+  workspaceId  String
+  email        String
+  invitedById  String
+  role         WorkspaceRole @default(MEMBER)
+  token        String        @unique
+  accepted     Boolean       @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime      @default(now())
+  temppassword String?
+  invitedBy    User          @relation(fields: [invitedById], references: [id])
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, email])
+  @@index([invitedById], map: "workspace_invitations_invitedById_fkey")
   @@map("workspace_invitations")
 }
 
 model Project {
-  id          String        @id @default(cuid())
-  name        String
-  description String?
-  workspaceId String
-  status      ProjectStatus @default(ACTIVE)
-  priority    Priority      @default(MEDIUM)
-  startDate   DateTime?
-  dueDate     DateTime?
-  createdBy   String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  // Relations
-  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  creator     User            @relation(fields: [createdBy], references: [id])
-  members     ProjectMember[]
-  tasks       Task[]
+  id           String          @id @default(cuid())
+  name         String
+  description  String?
+  workspaceId  String
+  status       ProjectStatus   @default(ACTIVE)
+  priority     Priority        @default(MEDIUM)
+  startDate    DateTime?
+  dueDate      DateTime?
+  createdBy    String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
   activityLogs ActivityLog[]
+  members      ProjectMember[]
+  creator      User            @relation(fields: [createdBy], references: [id])
+  workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks        Task[]
 
+  @@index([createdBy], map: "projects_createdBy_fkey")
+  @@index([workspaceId], map: "projects_workspaceId_fkey")
   @@map("projects")
 }
 
 model ProjectMember {
-  id        String      @id @default(cuid())
-  projectId String
-  userId    String
-  role      ProjectRole @default(MEMBER)
-  assignedAt DateTime   @default(now())
-
-  // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String      @id @default(cuid())
+  projectId  String
+  userId     String
+  role       ProjectRole @default(MEMBER)
+  assignedAt DateTime    @default(now())
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
+  @@index([userId], map: "project_members_userId_fkey")
   @@map("project_members")
 }
 
-
 model Task {
-  id             String     @id @default(cuid())
+  id             String           @id @default(cuid())
   title          String
   description    String?
   projectId      String
   assigneeId     String?
   reporterId     String
   position       Int
-  priority       Priority   @default(MEDIUM)
-  status         TaskStatus @default(TODO)
-  estimatedHours Decimal?   @db.Decimal(5, 2)
-  actualHours    Decimal    @default(0) @db.Decimal(5, 2)
+  priority       Priority         @default(MEDIUM)
+  status         TaskStatus       @default(TODO)
+  estimatedHours Decimal?         @db.Decimal(5, 2)
+  actualHours    Decimal          @default(0.00) @db.Decimal(5, 2)
   startDate      DateTime?
   dueDate        DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  activityLogs   ActivityLog[]
+  attachments    TaskAttachment[]
+  comments       TaskComment[]
+  assignee       User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reporter       User             @relation("TaskReporter", fields: [reporterId], references: [id])
+  timeEntries    TimeEntry[]
 
-  // Relations
-  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  assignee    User?            @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  reporter    User             @relation("TaskReporter", fields: [reporterId], references: [id])
-  comments    TaskComment[]
-  timeEntries TimeEntry[]
-  attachments TaskAttachment[]
-  activityLogs ActivityLog[]
-
+  @@index([assigneeId], map: "tasks_assigneeId_fkey")
+  @@index([projectId], map: "tasks_projectId_fkey")
+  @@index([reporterId], map: "tasks_reporterId_fkey")
   @@map("tasks")
 }
 
@@ -201,11 +197,11 @@ model TaskComment {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
 
-  // Relations
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
-
+  @@index([taskId], map: "task_comments_taskId_fkey")
+  @@index([userId], map: "task_comments_userId_fkey")
   @@map("task_comments")
 }
 
@@ -214,15 +210,15 @@ model TimeEntry {
   taskId      String
   userId      String
   description String?
-  hours       Float 
+  hours       Float
   date        DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
 
-  // Relations
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
-
+  @@index([taskId], map: "time_entries_taskId_fkey")
+  @@index([userId], map: "time_entries_userId_fkey")
   @@map("time_entries")
 }
 
@@ -235,11 +231,11 @@ model TaskAttachment {
   fileSize   Int?
   mimeType   String?
   uploadedAt DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
 
-  // Relations
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
-
+  @@index([taskId], map: "task_attachments_taskId_fkey")
+  @@index([userId], map: "task_attachments_userId_fkey")
   @@map("task_attachments")
 }
 
@@ -250,18 +246,18 @@ model ActivityLog {
   taskId      String?
   action      String
   description String?
-  metadata    Json?
+  metadata    String?  @db.LongText
   createdAt   DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task        Task?    @relation(fields: [taskId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
-  // Relations
-  user    User     @relation(fields: [userId], references: [id])
-  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  task    Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
-
+  @@index([projectId], map: "activity_logs_projectId_fkey")
+  @@index([taskId], map: "activity_logs_taskId_fkey")
+  @@index([userId], map: "activity_logs_userId_fkey")
   @@map("activity_logs")
 }
 
-// Enums
 enum Role {
   ADMIN
   MANAGER
@@ -297,4 +293,4 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
-} 
+}

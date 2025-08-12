@@ -53,6 +53,18 @@ export const commentSchema = z.object({
   content: z.string().min(1, 'Comment cannot be empty'),
 })
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address'),
+})
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(32, 'Password must be at most 32 characters'),
+})
+
 export type SignUpInput = z.infer<typeof signUpSchema>
 export type SignInInput = z.infer<typeof signInSchema>
 export type WorkspaceInput = z.infer<typeof workspaceSchema>
@@ -60,4 +72,6 @@ export type ProjectInput = z.infer<typeof projectSchema>
 export type TaskInput = z.infer<typeof taskSchema>
 export type ColumnInput = z.infer<typeof columnSchema>
 export type TimeEntryInput = z.infer<typeof timeEntrySchema>
-export type CommentInput = z.infer<typeof commentSchema> 
+export type CommentInput = z.infer<typeof commentSchema>
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema> 
