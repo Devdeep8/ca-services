@@ -22,6 +22,7 @@ type MemberListItem = {
     role: string;
     status: 'Active' | 'Pending';
     joined: string;
+    department    : string | null;
 };
 
 
@@ -53,73 +54,107 @@ export default function MembersPage() {
     }, [workspaceId]);
 
     return (
-        <div className="p-4 md:p-8">
-            <header className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold">Members</h1>
-                    <p className="text-zinc-400">Manage who has access to this workspace.</p>
-                </div>
-                <Button onClick={() => setIsInviteDialogOpen(true)}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Invite member
-                </Button>
-            </header>
-
-            <div className="border border-zinc-700 rounded-lg bg-zinc-800/30">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="border-zinc-700 hover:bg-transparent">
-                            <TableHead className="w-[40%]">Member</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Joined / Invited</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow><TableCell colSpan={5} className="text-center h-24">Loading members...</TableCell></TableRow>
-                        ) : (
-                            members.map((item) => (
-                                <TableRow key={item.id} className="border-zinc-800">
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarImage src={item.avatar || ''} />
-                                                <AvatarFallback>{item.email.charAt(0).toUpperCase()}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-medium">{item.email}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell><Badge variant="outline">{item.role}</Badge></TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {item.status === 'Active' ? 
-                                                // --- UPDATED CLASS ---
-                                                <CheckCircle2 className="h-4 w-4 text-success" /> : 
-                                                // --- UPDATED CLASS ---
-                                                <Clock className="h-4 w-4 text-warning" />
-                                            }
-                                            {item.status}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{format(new Date(item.joined), 'PP')}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
-
-            <InviteMemberDialog 
-                workspaceId={workspaceId}
-                open={isInviteDialogOpen}
-                onOpenChange={setIsInviteDialogOpen}
-                onInviteSent={fetchMembers} // Refresh list after sending
-            />
+  <div className="p-4 md:p-8">
+      <header className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Members</h1>
+          <p className="text-muted-foreground">Manage who has access to this workspace.</p>
         </div>
+        <Button onClick={() => setIsInviteDialogOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Invite member
+        </Button>
+      </header>
+
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[40%]">Member</TableHead>
+              <TableHead className="w-[20%]">Department</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Joined / Invited</TableHead>
+              {/* <TableHead className="text-right">Actions</TableHead> */}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">
+                  Loading members...
+                </TableCell>
+              </TableRow>
+            ) : (
+              members.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={item.avatar || ""} />
+                        <AvatarFallback>
+                          {item.email.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{item.name ?? item.email}</span>
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    {item.department ? (
+                      item.department
+                    ) : (
+                      <span className="text-muted-foreground">Not set</span>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    <Badge variant="outline">{item.role}</Badge>
+                  </TableCell>
+
+                  {/* --- UPDATED STATUS CELL FOR BOTH MODES --- */}
+                  <TableCell>
+                    {item.status === "Active" ? (
+                      <Badge variant="outline" className="text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20">
+                        <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
+                        Active
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20">
+                        <Clock className="mr-2 h-3.5 w-3.5" />
+                        Pending
+                      </Badge>
+                    )}
+                  </TableCell>
+
+                  <TableCell>{format(new Date(item.joined), "PP")}</TableCell>
+
+                  {/* <TableCell className="text-right">
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </TableCell> */}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* <InviteMemberDialog
+        workspaceId={workspaceId}
+        open={isInviteDialogOpen}
+        onOpenChange={setIsInviteDialogOpen}
+        onInviteSent={fetchMembers}
+      /> 
+      */}
+
+  <InviteMemberDialog
+    workspaceId={workspaceId}
+    open={isInviteDialogOpen}
+    onOpenChange={setIsInviteDialogOpen}
+    onInviteSent={fetchMembers} // Refresh list after sending
+  />
+</div>
     );
 }

@@ -13,7 +13,7 @@ export async function GET(
       where: { workspaceId },
       include: {
         user: {
-          select: { id: true, name: true, email: true, avatar: true },
+          select: { id: true, name: true, email: true, avatar: true , department: true },
         },
       },
     });
@@ -39,6 +39,7 @@ export async function GET(
         role: m.role,
         status: 'Active',
         joined: m.joinedAt,
+        department: m.user.department?.name || null
     }));
 
     const formattedInvitations = invitations.map(i => ({
@@ -50,6 +51,7 @@ export async function GET(
         role: i.role,
         status: 'Pending',
         joined: i.createdAt,
+        department: null
     }));
 
     const combinedList = [...formattedMembers, ...formattedInvitations];

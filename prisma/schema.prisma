@@ -48,12 +48,14 @@ model VerificationToken {
 }
 
 model User {
-  id                   String                @id @default(cuid())
-  email                String                @unique
-  name                 String
-  password             String?
-  avatar               String?
-  role                 Role                  @default(MEMBER)
+  id       String   @id @default(cuid())
+  email    String   @unique
+  name     String
+  password String?
+  avatar   String?
+  role     Role     @default(MEMBER)
+  userType UserType @default(INTERNAL)
+
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   resetToken           String?
@@ -72,7 +74,31 @@ model User {
   workspaceMemberships WorkspaceMember[]
   ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
 
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
   @@map("users")
+}
+
+// model Role {
+//   id    String @id @default(cuid())
+//   name  String @unique // e.g., "Admin", "Manager", "Member"
+//   users User[]
+
+//   @@map("roles")
+// }
+enum UserType {
+  INTERNAL
+  CLIENT
+}
+
+// This is the new model for departments.
+model Department {
+  id    String @id @default(cuid())
+  name  String @unique // e.g., "Engineering", "Design", "Marketing"
+  users User[]
+
+  @@map("departments")
 }
 
 model Workspace {

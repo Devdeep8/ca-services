@@ -29,6 +29,7 @@ interface UserInfo {
 }
 
 interface Project {
+  dueDate: string | number | Date
   status: string;
   id: string;
   name: string;
@@ -256,7 +257,8 @@ const ProjectTable = ({ projects, workspaceId }: { projects: Project[]; workspac
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Lead</TableHead>
-            <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
+            <TableHead>Due Date</TableHead>
+            {/* <TableHead className="hidden lg:table-cell">Last Updated</TableHead> */}
             <TableHead className="text-right">Status</TableHead>
             <TableHead className='text-right'>Action</TableHead>
           </TableRow>
@@ -275,9 +277,13 @@ const ProjectTable = ({ projects, workspaceId }: { projects: Project[]; workspac
                   <span className="font-medium">{project.lead?.name || "N/A"}</span>
                 </div>
               </TableCell>
+              
               <TableCell className="hidden lg:table-cell text-muted-foreground">
-                {new Date(project.updatedAt).toLocaleDateString()}
+                {new Date(project.dueDate).toLocaleDateString()}
               </TableCell>
+              {/* <TableCell className="hidden lg:table-cell text-muted-foreground">
+                {new Date(project.updatedAt).toLocaleDateString()}
+              </TableCell> */}
               <TableCell className="text-right">
                 <Badge variant={project.status === "ACTIVE" ? "success" : "secondary"}>
                   {project.status}

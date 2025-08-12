@@ -63,7 +63,7 @@ export default async function ProfileLayout({
           {isOwnProfile && (
             <>
               <TabsTrigger value="settings" asChild>
-                 <Link href={`/account/${profileId}/edit`}><Settings className="w-4 h-4 mr-2" />Settings</Link>
+                 <Link href={`/account/${profileId}/settings`}><Settings className="w-4 h-4 mr-2" />Settings</Link>
               </TabsTrigger>
               <TabsTrigger value="security" asChild>
                 <Link href={`/account/${profileId}/security`}><Shield className="w-4 h-4 mr-2" />Security</Link>
