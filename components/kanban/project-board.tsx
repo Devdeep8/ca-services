@@ -147,6 +147,16 @@ export default function ProjectBoard({
     })
   );
 
+  const contextValue = useMemo(() => {
+    if (!boardData) {
+      return null;
+    }
+    return {
+      workspaceId: boardData.workspaceId, // We know this is a string here
+      projectId,
+    };
+  }, [boardData, projectId]); // Dependency is now the whole boardData object
+
   const handleTaskCreated = (newTask: TaskWithAssignee) => {
     setBoardData((prev) => {
       if (!prev) return null;
@@ -345,9 +355,8 @@ export default function ProjectBoard({
   }
 
   return (
-    <ProjectContext.Provider
-      value={{ workspaceId: boardData.workspaceId, projectId }}
-    >
+     <ProjectContext.Provider value={contextValue}>
+
       <div className="p-4 md:p-6 h-full flex flex-col bg-background text-foreground">
         {/* ✨ 3. UPDATE THE HEADER TO DISPLAY THE STATUS */}
         <header className="flex items-center justify-between mb-4 pb-2 border-b">

@@ -43,41 +43,55 @@ export async function POST(request: NextRequest) {
     // Send email
     const emailHtml = `
       <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Reset Your Password</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background-color: #ffffff; padding: 30px; border: 1px solid #e9ecef; }
-            .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
-            .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 14px; color: #6c757d; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Reset Your Password</h1>
-            </div>
-            <div class="content">
-              <p>Hello ${user.name},</p>
-              <p>We received a request to reset your password for your Project Pro account.</p>
-              <p>Click the button below to reset your password:</p>
-              <a href="${resetUrl}" class="button">Reset Password</a>
-              <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-              <p><a href="${resetUrl}">${resetUrl}</a></p>
-              <p>This link will expire in 1 hour for security reasons.</p>
-              <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
-            </div>
-            <div class="footer">
-              <p>This is an automated message from Project Pro. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Reset Your Password</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .header { background-color: #f8f9fa; padding: 20px; text-align: center; }
+        .content { padding: 30px; }
+        .button {
+          display: inline-block;
+          background-color: #2832B1;
+          color: #ffffff !important;
+          text-decoration: none;
+          font-weight: 600;
+          padding: 12px 24px;
+          border-radius: 6px;
+          font-size: 16px;
+        }
+        .button:hover {
+          background-color: #1f2890;
+        }
+        .footer { background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 14px; color: #6c757d; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Reset Your Password</h1>
+        </div>
+        <div class="content">
+          <p>Hello ${user.name},</p>
+          <p>We received a request to reset your password for your Project Pro account.</p>
+          <p>Click the button below to reset your password:</p>
+          <p style="text-align:center;">
+            <a href="${resetUrl}" class="button">Reset Password</a>
+          </p>
+          <p>If the button doesn't work, copy and paste this link into your browser:</p>
+          <p><a href="${resetUrl}">${resetUrl}</a></p>
+          <p>This link will expire in 1 hour for security reasons.</p>
+          <p>If you didn't request this password reset, you can safely ignore this email.</p>
+        </div>
+        <div class="footer">
+          <p>This is an automated message from Project Pro. Please do not reply to this email.</p>
+        </div>
+      </div>
+    </body>
+  </html>
+    `;
 
 const mailResult = await sendMail({
   to: email,
