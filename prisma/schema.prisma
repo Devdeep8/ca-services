@@ -80,6 +80,71 @@ model User {
   @@map("users")
 }
 
+
+model Asset {
+  id             String       @id @default(cuid())
+  assetType      AssetType
+  provider       String    @default("TVMServer")
+  name           String
+  serviceId      String?   // Order/Service ID from provider
+  description    String?   @db.Text
+
+  // Technical Details
+  domainName     String?   // Null for VPS/SSL
+  ipAddress      String?   // Null for domains
+  hostingPlan    String? 
+  serverLocation String?
+
+  // Dates
+  purchaseDate   DateTime
+  expiryDate     DateTime
+  autoRenew      Boolean   @default(false)
+  renewalPeriod  RenewalPeriod
+
+  // Status & Uptime
+  status         AssetStatus @default(ACTIVE) // Active, Expired, Pending Renewal
+  liveStatus     LiveStatus  @default(UNKNOWN) // Website live or not
+  lastChecked    DateTime?   // When live status was last checked
+
+  // Access
+  controlPanelUrl String?
+  username       String?
+  password       String?     // encrypt in production
+  notes          String?     @db.Text
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum AssetType {
+  DOMAIN
+  HOSTING
+  VPS
+  SSL
+  OTHER
+}
+
+enum RenewalPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  BIENNIAL
+  TRIENNIAL
+  CUSTOM
+}
+
+enum AssetStatus {
+  ACTIVE
+  EXPIRED
+  PENDING_RENEWAL
+}
+
+enum LiveStatus {
+  ONLINE
+  OFFLINE
+  UNKNOWN
+}
+
 // model Role {
 //   id    String @id @default(cuid())
 //   name  String @unique // e.g., "Admin", "Manager", "Member"

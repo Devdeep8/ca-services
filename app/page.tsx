@@ -20,12 +20,26 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTheme } from "next-themes"
-
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+
+   const { data: session, status } = useSession() // <-- 3. Get session status
+   const router = useRouter()
+
+
+useEffect(() => {
+    // This effect runs when the session status changes.
+    // If the user is authenticated, it pushes them to the projects page.
+     if (status === "authenticated") {
+        router.push("/projects") // <-- 4. Redirect if logged in
+     }
+   }, [status, router])
+  // ------------------------------------------
 
   useEffect(() => {
     setMounted(true)

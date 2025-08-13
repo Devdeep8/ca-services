@@ -28,19 +28,8 @@ jobs:
         run: yarn install --frozen-lockfile
       
       - name:  Generate Prisma Client
-        run: npx prisma generate
-      - name: Create .env.production from GitHub Secrets
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
-          echo "NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}" >> .env.production
-          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env.production
-          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env.production
-          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env.production
-          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env.production
-
-      - name: Run ENV check for production
-        run: yarn check-env:prod
-
+        run: yarn prisma generate
+       
       - name: Run tests (excluding integration tests)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

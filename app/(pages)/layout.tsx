@@ -16,6 +16,7 @@ import {
   Plus,
   ChevronsUpDown,
   Check,
+  Package,
 } from "lucide-react";
 
 // UI Components (Assuming a shadcn/ui-like structure)
@@ -62,6 +63,7 @@ import {
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton"; // For loading states
 import { Header } from "@/components/layout-module/header";
+import { m } from "framer-motion";
 
 // A helper to get user initials
 const getInitials = (name = "") =>
@@ -198,6 +200,7 @@ export default function DashboardLayout({
       }/members`,
       icon: Users,
     },
+    // { name: "Domain", href: "/assets", icon: Package },
     { name: "Settings", href: `/account/${session?.user?.id}/settings`, icon: Settings },
   ];
 
