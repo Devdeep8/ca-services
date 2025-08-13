@@ -1,12 +1,6 @@
 import { db } from '@/lib/db';
 import { ProjectRole } from '@prisma/client';
 
-// Define a type for the task data to ensure consistency
-type TaskData = {
-  id: string;
-};
-
-// Custom error for clear, specific error handling
 export class AuthorizationError extends Error {
   constructor(message: string) {
     super(message);
@@ -15,54 +9,26 @@ export class AuthorizationError extends Error {
 }
 
 /**
- * Checks if a user is authorized to update a batch of tasks.
- * Throws an AuthorizationError if permission is denied.
- * @param userId - The ID of the user performing the action.
- * @param tasks - The array of tasks to be updated.
+ * Checks if a user is a member of a project. Throws an error if not.
+ * @returns The user's role ('LEAD' or 'MEMBER').
  */
-export async function authorizeTaskUpdate(userId: string, tasks: TaskData[]): Promise<string> {
-  const firstTaskId = tasks[0].id;
-  const contextTask = await db.task.findUnique({
-    where: { id: firstTaskId },
-    select: {
-      project: {
-        select: {
-          id: true,
-          members: {
-            where: { userId: userId },
-            select: { role: true },
-          },
-        },
+export async function authorizeProjectMember(
+  userId: string,
+  projectId: string
+): Promise<ProjectRole> {
+  const membership = await db.projectMember.findUnique({
+    // ✨ FIX: Use the special 'userId_projectId' object for compound unique keys.
+    where: {
+      projectId_userId: {
+        projectId: projectId,
+        userId: userId,
       },
     },
   });
 
-  if (!contextTask?.project) {
-    // Note: In a real app, you might want a different error type for "Not Found"
-    throw new AuthorizationError('Associated project not found.');
+  if (!membership) {
+    throw new AuthorizationError('You are not a member of this project.');
   }
 
-  const projectId = contextTask.project.id;
-  const memberRole = contextTask.project.members[0]?.role;
-  const isProjectLeadRole = memberRole === ProjectRole.LEAD;
-  const taskIds = tasks.map(t => t.id);
-
-  if (isProjectLeadRole) {
-    const crossProjectTaskCount = await db.task.count({
-      where: { id: { in: taskIds }, projectId: { not: projectId } },
-    });
-    if (crossProjectTaskCount > 0) {
-      throw new AuthorizationError('Cannot modify tasks from different projects.');
-    }
-  } else {
-    const unassignedTasksCount = await db.task.count({
-      where: { id: { in: taskIds }, assigneeId: { not: userId } },
-    });
-    if (unassignedTasksCount > 0) {
-      throw new AuthorizationError('You can only modify tasks assigned to you.');
-    }
-  }
-
-  return projectId;
-
+  return membership.role;
 }

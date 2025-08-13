@@ -162,6 +162,7 @@ model Department {
   id    String @id @default(cuid())
   name  String @unique // e.g., "Engineering", "Design", "Marketing"
   users User[]
+  project Project[]
 
   @@map("departments")
 }
@@ -230,6 +231,8 @@ model Project {
   members      ProjectMember[]
   creator      User            @relation(fields: [createdBy], references: [id])
   workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+    departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
   tasks        Task[]
 
   @@index([createdBy], map: "projects_createdBy_fkey")

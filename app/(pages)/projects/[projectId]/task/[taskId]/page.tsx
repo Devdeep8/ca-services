@@ -40,7 +40,12 @@ export default async function TaskPage({ params }: TaskPageProps) {
         },
       },
     }),
-    db.user.findMany()
+    db.projectMember.findMany({
+      where: { projectId: projectId },
+      include:{
+        user: { select: { id: true, name: true, avatar: true } },
+      }
+    })
   ]);
 
   if (!task) {

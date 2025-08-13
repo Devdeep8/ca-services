@@ -315,7 +315,7 @@ export default function ProjectBoard({
         const response = await fetch("/api/tasks/update-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tasks: tasksToUpdate, column: finalStatus }),
+          body: JSON.stringify({ tasks: tasksToUpdate, column: finalStatus , projectId : projectId}),
         });
 
         if (!response.ok) {

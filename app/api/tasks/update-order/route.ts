@@ -3,47 +3,40 @@ import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { TaskStatus } from '@prisma/client';
+import { AuthorizationError } from '@/services/task-service/auth.service';
+import { processAndValidateTaskUpdates } from '@/services/task-service/task.service';
 
-// Import our new services and custom error
-import { authorizeTaskUpdate, AuthorizationError } from '@/services/task-service/auth.service';
-import { updateTaskOrder } from '@/services/task-service/task.service';
-
-const updateTasksOrderSchema = z.array(
-  z.object({
-    id: z.string(),
-    position: z.number(),
-    status: z.nativeEnum(TaskStatus),
-  })
-);
+const updateTasksOrderSchema = z.object({
+  tasks: z.array(
+    z.object({
+      id: z.string(),
+      position: z.number(),
+      status: z.nativeEnum(TaskStatus),
+    })
+  ),
+  projectId: z.string(),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. AUTHENTICATION (Controller's job)
+    // 1. AUTHENTICATION & VALIDATION
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
     const currentUserId = session.user.id;
 
-    // 2. INPUT VALIDATION (Controller's job)
     const body = await request.json();
-    const tasksToUpdate = updateTasksOrderSchema.parse(body.tasks); // .parse throws on failure
-    
-    if (tasksToUpdate.length === 0) {
-      return NextResponse.json({ success: true, message: 'No tasks to update' });
-    }
+    const { tasks: tasksToUpdate, projectId } = updateTasksOrderSchema.parse(body);
 
-    // 3. AUTHORIZATION (Delegated to a service)
-    await authorizeTaskUpdate(currentUserId, tasksToUpdate);
+    // 2. DELEGATE TO THE MAIN SERVICE
+    // All complex logic is now handled by this single service call.
+    await processAndValidateTaskUpdates(currentUserId, projectId, tasksToUpdate);
 
-    // 4. EXECUTION (Delegated to a service)
-    await updateTaskOrder(tasksToUpdate);
-
-    // 5. RESPONSE (Controller's job)
+    // 3. RESPONSE
     return NextResponse.json({ success: true, message: 'Tasks updated successfully' });
-
   } catch (error) {
-    // 6. ERROR HANDLING (Controller's job)
+    // 4. ERROR HANDLING
     console.error('[TASKS_UPDATE_ORDER_POST]', error);
 
     if (error instanceof z.ZodError) {

@@ -15,10 +15,11 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TimeTracking } from "./time-tracking";
-import { set } from "zod";
 
 // A type for project members that includes the nested user object
-type MemberWithUser = User 
+type MemberWithUser = ProjectMember & {
+  user: { id: string; name: string | null; avatar: string | null };
+};
 
 // A client-safe version of TimeEntryWithUser where the date is a string
 type ClientTimeEntry = Omit<TimeEntry, 'date' | 'createdAt' | 'updatedAt'> & {
@@ -52,13 +53,13 @@ type ClientTask = Omit<Task, 'actualHours' | 'estimatedHours' | 'createdAt' | 'u
 
 interface TaskEditPageClientProps {
   initialTask: ClientTask;
-  projectMembers: MemberWithUser[];
+  projectMembers: MemberWithUser[]; // This now uses the correct type
   currentUserId: string;
 }
 
 export function TaskEditPageClient({
   initialTask,
-  projectMembers,
+  projectMembers, // This now uses the correct type
   currentUserId,
 }: TaskEditPageClientProps) {
   const router = useRouter();
@@ -229,8 +230,8 @@ export function TaskEditPageClient({
               <SelectItem value="unassigned">Unassigned</SelectItem>
               {/* FIX: Map over projectMembers correctly */}
               {projectMembers.map((member) => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.name}
+                <SelectItem key={member.id} value={member.user.id}>
+                  {member.user.name}
                 </SelectItem>
               ))}
             </SelectContent>
