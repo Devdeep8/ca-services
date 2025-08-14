@@ -62,8 +62,10 @@ model User {
   resetTokenExpiry     DateTime?
   accounts             Account[]
   activityLogs         ActivityLog[]
-  projectMemberships   ProjectMember[]
-  Project              Project[]
+  projectMemberships   ProjectMember[]      @relation("UserProjectMemberships")
+  projects             Project[] @relation("UserProjects")
+  clientProjects       Project[] @relation("ClientProjects")
+
   sessions             Session[]
   attachments          TaskAttachment[]
   comments             TaskComment[]
@@ -227,11 +229,14 @@ model Project {
   createdBy    String
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  isClient     Boolean         @default(false)
+  clientId     String?
+  client       User?      @relation("ClientProjects", fields: [clientId], references: [id])  
   activityLogs ActivityLog[]
   members      ProjectMember[]
-  creator      User            @relation(fields: [createdBy], references: [id])
+  creator      User       @relation("UserProjects", fields: [createdBy], references: [id])
   workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-    departmentId String?
+  departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
   tasks        Task[]
 
@@ -247,7 +252,7 @@ model ProjectMember {
   role       ProjectRole @default(MEMBER)
   assignedAt DateTime    @default(now())
   project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User        @relation("UserProjectMemberships", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
   @@index([userId], map: "project_members_userId_fkey")

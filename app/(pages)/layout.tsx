@@ -143,11 +143,11 @@ export default function DashboardLayout({
               href: "/projects",
               icon: FolderOpen,
             },
-            // {
-            //   name: "My Projects",
-            //   href: "/projects/my-projects",
-            //   icon: FolderOpen,
-            // },
+            {
+              name: "Assigend to Me",
+              href: `/projects/user-work/${session?.user?.id}`,
+              icon: FolderOpen,
+            },
             // {
             //   name: "Assign to me",
             //   href: "/projects/my-task",

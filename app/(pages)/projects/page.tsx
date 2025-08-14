@@ -125,7 +125,7 @@ useEffect(() => {
     return <DashboardLoader />;
   }
 
-  console.log(workspace);
+  // console.log(workspace);
   if (!workspace) {
     return (
       <div className="flex items-center justify-center h-full text-center">
