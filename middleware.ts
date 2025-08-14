@@ -2,21 +2,27 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  // Determine the correct cookie name based on the environment.
+  // In production (HTTPS), the cookie is prefixed with `__Secure-`.
+  const isProduction = process.env.NODE_ENV === 'production'
+  const tokenName = isProduction
+    ? '__Secure-next-auth.session-token'
+    : 'next-auth.session-token'
+
+  // Get the token using the dynamically determined name.
+  const token = request.cookies.get(tokenName)?.value
+
   const { pathname } = request.nextUrl
 
-  // Public paths that don't require authentication
-  const publicPaths = ['/', '/sign-in', '/sign-up']
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
+  const publicPaths = ['/sign-in', '/sign-up', '/']
+  const isPublicPath = publicPaths.includes(pathname)
 
-  // Check if user is authenticated
-  const token = request.cookies.get('auth-token')
-
-  // Redirect authenticated users away from auth pages
-  if (token && isPublicPath && pathname !== '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // If the user has a token and is on a public page, redirect to dashboard.
+  if (token && isPublicPath) {
+    return NextResponse.redirect(new URL('/projects', request.url))
   }
 
-  // Redirect unauthenticated users to sign-in page
+  // If the user has no token and is on a protected page, redirect to sign-in.
   if (!token && !isPublicPath) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
   }
@@ -24,6 +30,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
+// The matcher remains the same, it's already optimized.
 export const config = {
   matcher: [
     /*
@@ -35,4 +42,4 @@ export const config = {
      */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
-} 
+}

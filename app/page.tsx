@@ -20,26 +20,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTheme } from "next-themes"
-import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
+
 export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-
-   const { data: session, status } = useSession() // <-- 3. Get session status
-   const router = useRouter()
-
-
-useEffect(() => {
-    // This effect runs when the session status changes.
-    // If the user is authenticated, it pushes them to the projects page.
-     if (status === "authenticated") {
-        router.push("/projects") // <-- 4. Redirect if logged in
-     }
-   }, [status, router])
-  // ------------------------------------------
 
   useEffect(() => {
     setMounted(true)
@@ -59,53 +45,53 @@ useEffect(() => {
     setTheme(theme === "dark" ? "light" : "dark")
   }
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  }
+  // const container = {
+  //   hidden: { opacity: 0 },
+  //   show: {
+  //     opacity: 1,
+  //     transition: {
+  //       staggerChildren: 0.1,
+  //     },
+  //   },
+  // }
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  }
+  // const item = {
+  //   hidden: { opacity: 0, y: 20 },
+  //   show: { opacity: 1, y: 0 },
+  // }
 
-  const features = [
-    {
-      title: "Smart Automation",
-      description: "Automate repetitive tasks and workflows to save time and reduce errors.",
-      icon: <Zap className="size-5" />,
-    },
-    {
-      title: "Advanced Analytics",
-      description: "Gain valuable insights with real-time data visualization and reporting.",
-      icon: <BarChart className="size-5" />,
-    },
-    {
-      title: "Team Collaboration",
-      description: "Work together seamlessly with integrated communication tools.",
-      icon: <Users className="size-5" />,
-    },
-    {
-      title: "Enterprise Security",
-      description: "Keep your data safe with end-to-end encryption and compliance features.",
-      icon: <Shield className="size-5" />,
-    },
-    {
-      title: "Seamless Integration",
-      description: "Connect with your favorite tools through our extensive API ecosystem.",
-      icon: <Layers className="size-5" />,
-    },
-    {
-      title: "24/7 Support",
-      description: "Get help whenever you need it with our dedicated support team.",
-      icon: <Star className="size-5" />,
-    },
-  ]
+  // const features = [
+  //   {
+  //     title: "Smart Automation",
+  //     description: "Automate repetitive tasks and workflows to save time and reduce errors.",
+  //     icon: <Zap className="size-5" />,
+  //   },
+  //   {
+  //     title: "Advanced Analytics",
+  //     description: "Gain valuable insights with real-time data visualization and reporting.",
+  //     icon: <BarChart className="size-5" />,
+  //   },
+  //   {
+  //     title: "Team Collaboration",
+  //     description: "Work together seamlessly with integrated communication tools.",
+  //     icon: <Users className="size-5" />,
+  //   },
+  //   {
+  //     title: "Enterprise Security",
+  //     description: "Keep your data safe with end-to-end encryption and compliance features.",
+  //     icon: <Shield className="size-5" />,
+  //   },
+  //   {
+  //     title: "Seamless Integration",
+  //     description: "Connect with your favorite tools through our extensive API ecosystem.",
+  //     icon: <Layers className="size-5" />,
+  //   },
+  //   {
+  //     title: "24/7 Support",
+  //     description: "Get help whenever you need it with our dedicated support team.",
+  //     icon: <Star className="size-5" />,
+  //   },
+  // ]
 
   
 

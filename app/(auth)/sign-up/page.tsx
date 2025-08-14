@@ -12,23 +12,13 @@ import Link from 'next/link'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { signIn } from "next-auth/react"
 import axios from 'axios'
-import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
+
 export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-     const { data: session, status } = useSession() // <-- 3. Get session status
-   const router = useRouter()
 
-   useEffect(() => {
-    // This effect runs when the session status changes.
-    // If the user is authenticated, it pushes them to the projects page.
-     if (status === "authenticated") {
-        router.push("/projects") // <-- 4. Redirect if logged in
-     }
-   }, [status, router])
 
   const form = useForm<SignUpInput & { confirmPassword: string }>({
     resolver: zodResolver(signUpSchema.extend({
