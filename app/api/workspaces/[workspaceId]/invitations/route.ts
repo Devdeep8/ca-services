@@ -10,7 +10,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { workspaceId: string } }
+  { params }: { params: Promise<{ workspaceId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const currentUserId = session.user.id;
-    const { workspaceId } = params;
+    const { workspaceId } = await params;
     const { email } = await request.json();
 
     if (!email) {

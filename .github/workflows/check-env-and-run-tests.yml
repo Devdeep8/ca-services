@@ -28,7 +28,7 @@ jobs:
         run: yarn install --frozen-lockfile
       
       - name:  Generate Prisma Client
-        run: yarn prisma generate
+        run: yarn dlx prisma generate # Use 'dlx' to run prisma in a compatible environment
        
       - name: Run tests (excluding integration tests)
         env:
