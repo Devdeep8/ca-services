@@ -162,17 +162,17 @@ export default function DashboardLayout({
         },
         {
           name: "Team",
-          href: `/workspaces/${currentWorkspace?.id || ""}/members`,
+          href: `/workspaces/${currentWorkspace?.id}/members`,
           icon: Users,
           children: [
             {
               name: "All Members",
-              href: `/workspaces/${currentWorkspace?.id || ""}/members`,
+              href: `/workspaces/${currentWorkspace?.id}/members`,
               icon: Users,
             },
             {
               name: "Invite Members",
-              href: `/workspaces/${currentWorkspace?.id || ""}/members`,
+              href: `/workspaces/${currentWorkspace?.id}/members`,
               icon: PlusCircle,
             },
           ],

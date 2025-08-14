@@ -23,9 +23,7 @@ export async function GET(
       where: {
         workspaceId,
         accepted: false,
-        expiresAt: {
-          gt: new Date(), // Only show non-expired invitations
-        },
+
       },
     });
 
