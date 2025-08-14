@@ -14,7 +14,10 @@
     "db:studio": "prisma studio",
     "check-env": "tsx scripts/check-env.ts",
     "check-env:prod": "cross-env NODE_ENV=production tsx scripts/check-env.ts",
+    "db:backup": "tsx scripts/backup.ts",
     "test": "jest",
+    "test:frontend": "jest --projects '<rootDir>/jest.config.ts' --selectProjects Frontend",
+    "test:backend": "jest --projects '<rootDir>/jest.config.ts' --selectProjects Backend",
     "test:watch": "jest --watch"
   },
   "dependencies": {
@@ -83,8 +86,10 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.0",
     "@types/jsonwebtoken": "^9.0.6",

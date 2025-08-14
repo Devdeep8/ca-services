@@ -1,5 +1,5 @@
 # .github/workflows/check-env-and-run-tests.yml
-name: Check Environment Variables and Run Tests (excluding integration)
+name: Check Environment Variables and Run Tests
 
 on:
   push:
@@ -24,12 +24,22 @@ jobs:
       - name: Enable Corepack (for Yarn)
         run: corepack enable
 
+      # Add a caching step based on the yarn.lock file
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       
-      - name:  Generate Prisma Client
-        run: yarn dlx prisma generate # Use 'dlx' to run prisma in a compatible environment
-       
+      - name: Generate Prisma Client
+        # With a clean install, the simple command should work
+        run: yarn prisma generate
+        
       - name: Run tests (excluding integration tests)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

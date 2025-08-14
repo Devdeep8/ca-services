@@ -1,14 +1,14 @@
-import { getUserByEmail } from "../../utils/helper-server-function";
+import { getUserByEmail } from "@/utils/helper-server-function";
 
 // Mock db
-jest.mock("../../lib/db", () => ({
+jest.mock("@/lib/db", () => ({
   db: {
     user: {
       findUnique: jest.fn(),
     },
   },
 }));
-const { db } = require("../../lib/db");
+const { db } = require("@/lib/db");
 
 
 describe("getUserByEmail", () => {
