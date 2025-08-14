@@ -285,7 +285,7 @@ export function AppSidebar({
                           </CommandItem>
                         ))}
                       </CommandGroup>
-                      {onWorkspaceAdd && (
+                      {/* {onWorkspaceAdd && (
                         <>
                           <CommandGroup>
                             <CommandItem
@@ -299,7 +299,7 @@ export function AppSidebar({
                             </CommandItem>
                           </CommandGroup>
                         </>
-                      )}
+                      )} */}
                     </CommandList>
                   </Command>
                 </PopoverContent>
@@ -487,7 +487,7 @@ export function AppSidebar({
       </Sidebar>
 
       {/* Add Workspace Dialog */}
-      <Dialog open={isAddWorkspaceOpen} onOpenChange={setIsAddWorkspaceOpen}>
+      {/* <Dialog open={isAddWorkspaceOpen} onOpenChange={setIsAddWorkspaceOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add New Workspace</DialogTitle>
@@ -522,7 +522,7 @@ export function AppSidebar({
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </>
   );
 }

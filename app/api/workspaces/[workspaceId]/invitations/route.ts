@@ -10,7 +10,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ workspaceId: string }> }
+  { params }: { params: { workspaceId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const currentUserId = session.user.id;
-    const { workspaceId } = await params;
+    const { workspaceId } = params;
     const { email } = await request.json();
 
     if (!email) {
@@ -40,35 +40,32 @@ export async function POST(
     }
 
     let userToInvite = await db.user.findUnique({ where: { email } });
+    
+    // This variable will hold the password ONLY for new users.
+    let temporaryPasswordForEmail: string | null = null;
 
-    // --- Refactored Core Logic ---
-    let randomPassword ;
-    // Step A: If the user does not exist, create them first.
     if (!userToInvite) {
-      // Use a non-guessable placeholder password. The user will be prompted to set a real one.
-       randomPassword = crypto.randomBytes(16).toString('hex');
-      const hashedPassword = await bcrypt.hash(randomPassword, 12);
+      // Generate the plaintext password and store it for the email
+      temporaryPasswordForEmail = crypto.randomBytes(12).toString('hex');
+      const hashedPassword = await bcrypt.hash(temporaryPasswordForEmail, 12);
 
       userToInvite = await db.user.create({
         data: {
           email,
           name: email.split('@')[0],
-          password: hashedPassword,
+          password: hashedPassword, // Store the HASHED password
           role: Role.MEMBER,
         },
       });
     }
 
-    // Step B: Now that we are GUARANTEED to have a user object, ALWAYS generate a magic link.
     const invitationToken = crypto.randomBytes(32).toString('hex');
     const authToken = jwt.sign({ userId: userToInvite.id }, process.env.NEXTAUTH_SECRET!, {
-      expiresIn: '24h', // The magic login is valid for 24 hours
+      expiresIn: '24h',
     });
-
     const invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation?token=${invitationToken}&auth_token=${authToken}`;
     
-    // Step C: Create or update the invitation record in the database.
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await db.workspaceInvitation.upsert({
         where: { workspaceId_email: { workspaceId, email } },
         update: { token: invitationToken, expiresAt },
@@ -79,25 +76,37 @@ export async function POST(
             expiresAt,
             invitedById: currentUserId,
             role: WorkspaceRole.MEMBER,
-            temppassword: randomPassword
         },
     });
 
-    // Step D: Send the universal magic link email.
-    // SECURITY: We no longer send a temporary password, as the magic link handles authentication.
+    // --- UPDATED EMAIL LOGIC ---
     await sendMail({
         to: email,
         subject: `You're invited to join ${workspace.name} on Project Pro`,
         html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <h2>You've been invited to join ${workspace.name}</h2>
-            <p>Click the button below to accept the invitation. This link will automatically sign you in and is valid for 24 hours.</p>
+            <p>Click the button below to accept the invitation and sign in. This link is valid for 24 hours.</p>
             <p style="margin: 20px 0;">
             <a href="${invitationLink}" 
                 style="display: inline-block; padding: 12px 24px; background-color: #0d6efd; color: white; text-decoration: none; border-radius: 6px;">
                 Accept Invitation & Sign In
             </a>
             </p>
+
+            ${
+              temporaryPasswordForEmail
+                ? `<div style="margin-top: 20px; padding: 12px; background-color: #f9f9f9; border: 1px solid #ccc; border-radius: 4px;">
+                    <p>An account has been created for you. Here are your login details:</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Temporary Password:</strong> ${temporaryPasswordForEmail}</p>
+                    <p style="font-size: 0.9em; color: #555;">We recommend changing your password after your first login.</p>
+                  </div>`
+                : `<div style="margin-top: 20px; padding: 12px; background-color: #f0f8ff; border: 1px solid #b3d7ff; border-radius: 4px;">
+                    <p>You have been added to a new workspace. Please log in using your existing password.</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                  </div>`
+            }
         </div>
         `,
     });
