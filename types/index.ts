@@ -8,6 +8,13 @@ export interface User {
   updatedAt: Date
 }
 
+export interface Department {
+  id     : String   
+  name    :String  
+  project : Project[]
+  users  : User[]
+
+}
 export interface Workspace {
   id: string
   name: string
@@ -43,6 +50,7 @@ export interface Project {
   createdAt: Date
   updatedAt: Date
   workspace: Workspace
+  departments: Department[]
   creator: User
   members: ProjectMember[]
   columns: Column[]

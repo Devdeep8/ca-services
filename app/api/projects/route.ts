@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { z } from "zod";
 import { getUserByEmail } from "@/utils/helper-server-function";
-import { error } from "console";
 
 /**
  * Fetches all projects for a given workspace, correctly identifying the project lead.
@@ -106,25 +105,36 @@ export async function GET(req: NextRequest) {
 // Creates a new project with default values.
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userData = await getUserByEmail(session.user.email as string)
+  const userData = await getUserByEmail(session.user.email);
+  const userId = userData.user?.id;
 
-  if(userData.error != null){
-    return NextResponse.json({error: error} , {status: 405})
+  if (!userId) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-
+  // --- 1. UPDATE ZOD SCHEMA ---
+  // Add the new optional fields for validation.
   const createProjectSchema = z.object({
     name: z.string().min(1, "Project name is required."),
-    workspaceId: z.string(),
+    workspaceId: z.string().min(1, "Workspace ID is required."),
+    departmentId: z.string().optional().nullable(),
+    // isClient: z.boolean().optional(),
+    // clientId: z.string().optional().nullable(),
   });
 
   try {
     const body = await req.json();
-    const { name, workspaceId } = createProjectSchema.parse(body);
+    // --- 2. PARSE THE FULL PAYLOAD ---
+    const { name, workspaceId, departmentId, } = createProjectSchema.parse(body);
+
+    // Basic validation: if it's a client project, a client ID must be provided.
+    // if (isClient && !clientId) {
+    //     return NextResponse.json({ error: "clientId is required for client projects" }, { status: 400 });
+    // }
 
     // Calculate due date as one month from now
     const dueDate = new Date();
@@ -134,13 +144,18 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         workspaceId,
-        createdBy: userData.user.id,
+        createdBy: userId,
         dueDate,
-        // Add the creator as the first member of the project
+        // --- 3. ADD NEW DATA TO THE CREATE CALL ---
+        departmentId: departmentId,
+        // isClient: isClient,
+        // clientId: isClient ? clientId : null, // Only store clientId if it's a client project
+        
+        // Add the creator as the first member of the project with a LEAD role
         members: {
           create: {
-            userId: userData.user.id,
-            role: "LEAD",
+            userId: userId,
+            role: "LEAD", 
           },
         },
       },
@@ -149,7 +164,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ project: newProject }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error }, { status: 400 });
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error("Failed to create project:", error);
     return NextResponse.json(

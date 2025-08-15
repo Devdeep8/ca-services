@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Project, User, ProjectMember as ProjectMemberWithUser, ProjectRole } from '@prisma/client';
+import { Project, User, Department, ProjectMember as ProjectMemberWithUser, ProjectRole, ProjectStatus, Priority } from '@prisma/client';
 import { toast } from 'sonner';
 import { format, differenceInDays } from 'date-fns';
 import { X, UserPlus, Calendar as CalendarIcon } from 'lucide-react';
@@ -22,55 +22,64 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 
-// Define types for props
-type ProjectWithMembers = Project & { members: (ProjectMemberWithUser & { user: User })[] };
+// --- TYPE DEFINITIONS ---
+type DropdownDepartment = Pick<Department, 'id' | 'name'>;
 type FormUser = Pick<User, 'id' | 'name' | 'email'>;
 
-// Define the form validation schema using Zod
+// This type now includes the department relation for displaying the current department
+type ProjectWithDetails = Project & { 
+    members: (ProjectMemberWithUser & { user: User })[];
+    department: Department | null; 
+};
+
+// --- ZOD VALIDATION SCHEMA ---
 const projectFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  startDate: z.date().optional().nullable(),
-  // NOTE: Assuming you are using 'dueDate' based on your last question.
-  // If you are using 'endDate', just rename 'dueDate' to 'endDate' throughout this file.
-  dueDate: z.date().optional().nullable(),
-  status: z.enum(['PENDING', 'ACTIVE', 'COMPLETED', 'ARCHIVED']),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH' , 'URGENT']),
+  description: z.string().nullable().optional(),
+  startDate: z.date().nullable().optional(),
+  dueDate: z.date().nullable().optional(),
+  status: z.nativeEnum(ProjectStatus),
+  priority: z.nativeEnum(Priority),
   createdBy: z.string().cuid("Creator is required"),
+  departmentId: z.string().cuid("Invalid department ID").nullable().optional(), // Added departmentId
   members: z.array(z.object({
     userId: z.string(),
     name: z.string(),
     role: z.nativeEnum(ProjectRole),
   })),
 })
-// Rule 1: Handle relationship between start date and due date
 .refine(data => {
   if (data.dueDate) {
-    if (!data.startDate) return false; // Fail if due date exists but start date doesn't
-    return data.dueDate >= data.startDate; // Fail if due date is before start date
+    if (!data.startDate) return false;
+    return data.dueDate >= data.startDate;
   }
   return true;
 }, {
   message: "A start date is required and must be before the due date.",
   path: ["dueDate"], 
 })
-// ✨ Rule 2: NEW - Ensure due date is not in the past
 .refine(data => {
     if (data.dueDate) {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set time to the beginning of today for accurate comparison
+        today.setHours(0, 0, 0, 0);
         return data.dueDate >= today;
     }
-    return true; // If no due date, this validation passes
+    return true;
 }, {
     message: "Due date cannot be in the past.",
     path: ["dueDate"],
 });
 
-
 type ProjectFormData = z.infer<typeof projectFormSchema>;
 
-export function ProjectEditForm({ initialProject, allUsers }: { initialProject: ProjectWithMembers; allUsers: FormUser[] }) {
+// --- COMPONENT PROPS ---
+interface ProjectEditFormProps {
+    initialProject: ProjectWithDetails;
+    allUsers: FormUser[];
+    departments: DropdownDepartment[]; // Departments are now passed as a prop
+}
+
+export function ProjectEditForm({ initialProject, allUsers, departments }: ProjectEditFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -79,11 +88,12 @@ export function ProjectEditForm({ initialProject, allUsers }: { initialProject: 
     defaultValues: {
       name: initialProject.name,
       description: initialProject.description ?? '',
-      startDate: initialProject.startDate ?? null,
-      dueDate: initialProject.dueDate ?? null,
+      startDate: initialProject.startDate ? new Date(initialProject.startDate) : null,
+      dueDate: initialProject.dueDate ? new Date(initialProject.dueDate) : null,
       status: initialProject.status,
       priority: initialProject.priority,
       createdBy: initialProject.createdBy,
+      departmentId: initialProject.departmentId ?? undefined, // Set default department
       members: initialProject.members.map(m => ({
         userId: m.user.id,
         name: m.user.name ?? '',
@@ -96,7 +106,7 @@ export function ProjectEditForm({ initialProject, allUsers }: { initialProject: 
 
   const calculateDuration = () => {
     if (startDate && dueDate && dueDate >= startDate) {
-      const days = differenceInDays(dueDate, startDate) + 1; // Inclusive
+      const days = differenceInDays(dueDate, startDate) + 1;
       return `${days} day(s)`;
     }
     return null;
@@ -123,7 +133,7 @@ export function ProjectEditForm({ initialProject, allUsers }: { initialProject: 
         members: data.members.map(({ userId, role }) => ({ userId, role })),
       };
 
-      const response = await fetch(`/api/data/projects/${initialProject.id}`, {
+      const response = await fetch(`/api/data/projects/${initialProject.id}`, { // Ensure this API endpoint is correct
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -131,7 +141,6 @@ export function ProjectEditForm({ initialProject, allUsers }: { initialProject: 
 
       if (response.ok) {
         toast.success('Project updated successfully!');
-        router.push(`/projects/${initialProject.id}`);
         router.refresh();
       } else {
         const errorData = await response.json();
@@ -144,7 +153,7 @@ export function ProjectEditForm({ initialProject, allUsers }: { initialProject: 
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* Basic Fields */}
+      {/* --- BASIC FIELDS --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="name">Project Name</Label>
@@ -174,84 +183,108 @@ export function ProjectEditForm({ initialProject, allUsers }: { initialProject: 
         <Textarea id="description" {...register('description')} rows={4} />
       </div>
 
-      {/* Date Pickers */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        <div>
-          <Label htmlFor="startDate">Start Date</Label>
-          <Controller
-            name="startDate"
+      {/* --- STATUS, PRIORITY, DEPARTMENT --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Controller
+            name="status"
             control={control}
             render={({ field }) => (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !field.value && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={field.value ?? undefined}
-                    onSelect={field.onChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+                <div>
+                    <Label>Status</Label>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {Object.values(ProjectStatus).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
             )}
-          />
-        </div>
-        <div>
-          <Label htmlFor="dueDate">Due Date</Label>
-          <Controller
-            name="dueDate"
+        />
+        <Controller
+            name="priority"
             control={control}
             render={({ field }) => (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !field.value && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={field.value ?? undefined}
-                    onSelect={field.onChange}
-                    disabled={(date) => startDate ? date < startDate : false}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+                <div>
+                    <Label>Priority</Label>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {Object.values(Priority).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
             )}
-          />
-          {errors.dueDate && <p className="text-red-500 text-sm mt-1">{errors.dueDate.message}</p>}
-        </div>
+        />
+        <Controller
+            name="departmentId"
+            control={control}
+            render={({ field }) => (
+                <div>
+                    <Label>Department</Label>
+                    {/* FIX: Handle "none" value to set field to null */}
+                    <Select 
+                        onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+                        defaultValue={field.value ?? ""}
+                    >
+                        <SelectTrigger><SelectValue placeholder="Select a department" /></SelectTrigger>
+                        <SelectContent>
+                            {/* FIX: Use a non-empty string for the "None" option */}
+                            <SelectItem value="none">None</SelectItem>
+                            {departments.map(dept => <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
+        />
       </div>
 
-      {/* Duration Display */}
+      {/* --- DATE PICKERS & DURATION --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        {/* Start Date Controller */}
+        <Controller
+          name="startDate"
+          control={control}
+          render={({ field }) => (
+            <div>
+              <Label>Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent>
+              </Popover>
+            </div>
+          )}
+        />
+        {/* Due Date Controller */}
+        <Controller
+          name="dueDate"
+          control={control}
+          render={({ field }) => (
+            <div>
+              <Label>Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} disabled={(date) => startDate ? date < startDate : false} initialFocus /></PopoverContent>
+              </Popover>
+              {errors.dueDate && <p className="text-red-500 text-sm mt-1">{errors.dueDate.message}</p>}
+            </div>
+          )}
+        />
+      </div>
       <div className="text-sm text-muted-foreground -mt-4">
-        {calculateDuration() && (
-          <p><strong>Duration:</strong> {calculateDuration()}</p>
-        )}
+        {calculateDuration() && <p><strong>Duration:</strong> {calculateDuration()}</p>}
       </div>
       
-      {/* Other Selects: Status and Priority would go here */}
-
-      {/* Members Management */}
+      {/* --- MEMBERS MANAGEMENT --- */}
       <div>
         <h3 className="text-lg font-medium mb-2">Project Members</h3>
         <div className="space-y-3 rounded-md border p-4">
@@ -301,7 +334,7 @@ export function ProjectEditForm({ initialProject, allUsers }: { initialProject: 
         </Popover>
       </div>
 
-      {/* Submit Button */}
+      {/* --- SUBMIT BUTTON --- */}
       <div className="flex justify-end">
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Saving...' : 'Save Changes'}

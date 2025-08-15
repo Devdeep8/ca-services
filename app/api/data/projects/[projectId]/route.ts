@@ -1,4 +1,3 @@
-// app/api/projects/[projectId]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -12,11 +11,13 @@ import { Prisma, ProjectRole } from "@prisma/client";
 const updateProjectSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").optional(),
   description: z.string().optional().nullable(),
-  status: z.enum(["ACTIVE", "COMPLETED", "ARCHIVED"]).optional(),
+status: z.enum(["ACTIVE", "ON_HOLD", "COMPLETED" , "ARCHIVED"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
   startDate: z.coerce.date().optional().nullable(),
   dueDate: z.coerce.date().optional().nullable(),
   createdBy: z.string().cuid("Invalid creator ID").optional(),
+  departmentId: z.string().cuid("Invalid department ID").nullable().optional(),
+
   members: z
     .array(
       z.object({
@@ -88,7 +89,7 @@ export async function PATCH(
     );
   }
 
-  const { members, createdBy, ...scalarProjectData } = validation.data;
+  const { members, createdBy, departmentId ,...scalarProjectData } = validation.data;
 
   try {
     // Fetch current project to compare and only update changed fields
@@ -136,6 +137,16 @@ export async function PATCH(
       updatePayload.creator = { connect: { id: createdBy } };
     }
 
+if (departmentId !== undefined && departmentId !== existingProject.departmentId) {
+        if (departmentId === null) {
+            // If the form sends null, disconnect the department
+            updatePayload.department = { disconnect: true };
+        } else {
+            // Otherwise, connect to the new department
+            updatePayload.department = { connect: { id: departmentId } };
+        }
+    }
+
     // Update the project (no members yet)
     const updatedProject = await db.project.update({
       where: { id: projectId },
@@ -177,6 +188,8 @@ export async function PATCH(
         );
       }
     }
+
+    // if(depa)
 
     return NextResponse.json(updatedProject, { status: 200 });
   } catch (error) {

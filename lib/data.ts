@@ -5,6 +5,7 @@ export async function getProjectForEdit(projectId: string) {
   const project = await db.project.findUnique({
     where: { id: projectId },
     include: {
+      department: true,
       members: {
         include: { user: true },
       },
@@ -23,6 +24,16 @@ export async function getAllUsers() {
       id: true,
       name: true,
       email: true,
+    },
+  });
+}
+
+
+export async function getAllDepartments() {
+  return await db.department.findMany({
+    select: {
+      id: true,
+      name: true,
     },
   });
 }
