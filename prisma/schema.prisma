@@ -48,35 +48,35 @@ model VerificationToken {
 }
 
 model User {
-  id       String   @id @default(cuid())
-  email    String   @unique
-  name     String
-  password String?
-  avatar   String?
-  role     Role     @default(MEMBER)
-  userType UserType @default(INTERNAL)
+  id                                String                @id @default(cuid())
+  email                             String                @unique
+  name                              String
+  password                          String?
+  avatar                            String?
+  role                              Role                  @default(MEMBER)
+  createdAt                         DateTime              @default(now())
+  updatedAt                         DateTime              @updatedAt
+  resetToken                        String?
+  resetTokenExpiry                  DateTime?
+  departmentId                      String?
+  userType                          UserType              @default(INTERNAL)
+  accounts                          Account[]
+  activityLogs                      ActivityLog[]
+  projectMemberships                ProjectMember[]
+  clientProjects  Project[]             @relation("clientProjects")
+  Project                           Project[]
+  sessions                          Session[]
+  attachments                       TaskAttachment[]
+  comments                          TaskComment[]
+  assignedTasks                     Task[]                @relation("TaskAssignee")
+  reportedTasks                     Task[]                @relation("TaskReporter")
+  timeEntries                       TimeEntry[]
+  department                        Department?           @relation(fields: [departmentId], references: [id])
+  WorkspaceInvitation               WorkspaceInvitation[]
+  workspaceMemberships              WorkspaceMember[]
+  ownedWorkspaces                   Workspace[]           @relation("WorkspaceOwner")
 
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  resetToken           String?
-  resetTokenExpiry     DateTime?
-  accounts             Account[]
-  activityLogs         ActivityLog[]
-  projectMemberships   ProjectMember[]
-  Project              Project[]
-  sessions             Session[]
-  attachments          TaskAttachment[]
-  comments             TaskComment[]
-  assignedTasks        Task[]                @relation("TaskAssignee")
-  reportedTasks        Task[]                @relation("TaskReporter")
-  timeEntries          TimeEntry[]
-  WorkspaceInvitation  WorkspaceInvitation[]
-  workspaceMemberships WorkspaceMember[]
-  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
-
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
-
+  @@index([departmentId], map: "users_departmentId_fkey")
   @@map("users")
 }
 
@@ -216,27 +216,32 @@ model WorkspaceInvitation {
 }
 
 model Project {
-  id           String          @id @default(cuid())
-  name         String
-  description  String?
-  workspaceId  String
-  status       ProjectStatus   @default(ACTIVE)
-  priority     Priority        @default(MEDIUM)
-  startDate    DateTime?
-  dueDate      DateTime?
-  createdBy    String
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  activityLogs ActivityLog[]
-  members      ProjectMember[]
-  creator      User            @relation(fields: [createdBy], references: [id])
-  workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-    departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
-  tasks        Task[]
+  id                             String          @id @default(cuid())
+  name                           String
+  description                    String?
+  workspaceId                    String
+  status                         ProjectStatus   @default(ACTIVE)
+  priority                       Priority        @default(MEDIUM)
+  startDate                      DateTime?
+  dueDate                        DateTime?
+  createdBy                      String
+  createdAt                      DateTime        @default(now())
+  updatedAt                      DateTime        @updatedAt
+  departmentId                   String?
+  clientId                       String?
+  isClient                       Boolean         @default(false)
+  activityLogs                   ActivityLog[]
+  members                        ProjectMember[]
+  clientUser User?           @relation("clientProjects", fields: [clientId], references: [id])
+  creator                        User            @relation(fields: [createdBy], references: [id])
+  department                     Department?     @relation(fields: [departmentId], references: [id])
+  workspace                      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks                          Task[]
 
   @@index([createdBy], map: "projects_createdBy_fkey")
   @@index([workspaceId], map: "projects_workspaceId_fkey")
+  @@index([clientId], map: "projects_clientId_fkey")
+  @@index([departmentId], map: "projects_departmentId_fkey")
   @@map("projects")
 }
 
@@ -371,6 +376,7 @@ enum ProjectRole {
 
 enum ProjectStatus {
   ACTIVE
+  ON_HOLD
   COMPLETED
   ARCHIVED
 }
@@ -388,3 +394,20 @@ enum Priority {
   HIGH
   URGENT
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

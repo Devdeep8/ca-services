@@ -1,13 +1,14 @@
 // app/projects/[projectId]/edit/page.tsx
-import { getProjectForEdit, getAllUsers } from '@/lib/data';
+import { getProjectForEdit, getAllUsers , getAllDepartments } from '@/lib/data';
 import { ProjectEditForm } from '@/components/project-module/project-edit-form';
 
 export default async function ProjectEditPage({ params }: { params: Promise<{ projectId: string }> }) {
     const { projectId } = await params;
   // Fetch data in parallel on the server
-  const [project, users] = await Promise.all([
+  const [project, users , departments] = await Promise.all([
     getProjectForEdit(projectId),
     getAllUsers(),
+    getAllDepartments() 
   ]);
 
   return (
@@ -18,7 +19,7 @@ export default async function ProjectEditPage({ params }: { params: Promise<{ pr
           Update the details for "{project.name}".
         </p>
         {/* Pass server-fetched data to the client component */}
-        <ProjectEditForm initialProject={project} allUsers={users} />
+        <ProjectEditForm initialProject={project} allUsers={users}  departments={departments}/>
       </div>
     </div>
   );
