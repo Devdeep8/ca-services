@@ -1,34 +1,48 @@
 'use client';
 
 import useSWR from 'swr';
-import { useState, useMemo } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from '@/components/ui/skeleton';
-import { User as UserIcon, Plus, Share, CheckCircle, Clock, FolderKanban } from "lucide-react";
+import { CheckCircle, Clock, FolderKanban, Star, CircleHelp, List, UserCheck } from "lucide-react";
 import Link from "next/link";
+import { Task as PrismaTask } from '@prisma/client';
 
-// --- Types (for better code quality) ---
+// --- Types to Match the NEW API Response ---
 interface Task {
   id: string;
   title: string;
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  status: PrismaTask['status'];
   projectId: string;
   workspaceId: string;
-  project: { name: string };
-  departmentId?: string; // Optional department ID on the task
+  project: {
+    name: string;
+    isClient: boolean;
+  };
 }
-interface Department {
-  id: string;
-  name: string;
+
+interface DepartmentGroup {
+  departmentId: string;
+  departmentName: string;
+  tasks: Task[];
 }
-interface User {
-  name: string;
-  avatar?: string;
+
+interface MyWorkData {
+  user: {
+    name: string;
+  };
+  stats: {
+    todo: number;
+    inProgress: number;
+    review: number;
+    done: number;
+  };
+  allTasks: Task[];
+  clientTasks: Task[];
+  departmentProjectGroups: DepartmentGroup[];
 }
 
 // --- API Fetcher ---
@@ -36,68 +50,56 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 // --- Main Page Component ---
 export default function MyWorkPage({ userId }: { userId: string }) {
-  const [activeTab, setActiveTab] = useState('all');
+  // --- CHANGE: Default active tab is now 'all' ---
+  const [activeTab, setActiveTab] = useState<string>('all');
 
-  // --- Data Fetching ---
-  const { data: user, error: userError } = useSWR<User>(`/api/users/${userId}`, fetcher);
-  const { data: departments, error: departmentsError } = useSWR<Department[]>('/api/departments', fetcher);
-  // Fetch all tasks at once to calculate stats and filter on the client
-  const { data: allTasks, error: tasksError } = useSWR<Task[]>(`/api/users/${userId}/my-work/all-tasks`, fetcher);
+  // --- CHANGE: Updated the API endpoint URL ---
+  const { data, error, isLoading } = useSWR<MyWorkData>(`/api/users/${userId}/my-work`, fetcher);
 
-  console.log(allTasks , user , departments , "form the code ")
-  // --- Derived State for Filtering ---
-  const filteredTasks = useMemo(() => {
-    if (!allTasks) return [];
-    if (activeTab === 'all') return allTasks;
-    if (activeTab === 'client') {
-        // Assuming client tasks don't have a departmentId
-        return allTasks.filter(task => !task.departmentId);
+  // Effect to set a sensible initial tab if 'all' is empty
+  useEffect(() => {
+    if (data) {
+      if (data.allTasks?.length > 0) {
+        setActiveTab('all');
+      } else if (data.clientTasks?.length > 0) {
+        setActiveTab('client');
+      } else if (data.departmentProjectGroups?.length > 0) {
+        setActiveTab(data.departmentProjectGroups[0].departmentId);
+      }
     }
-    return allTasks.filter(task => task.departmentId === activeTab);
-  }, [allTasks, activeTab]);
-  
-  // --- Loading and Error States ---
-  if (userError || departmentsError || tasksError) return <div>Failed to load dashboard.</div>;
-  if (!user || !departments || !allTasks) return <PageLoader />;
+  }, [data]);
 
-  // --- Calculated Stats for Header ---
-  const stats = {
-    inProgress: allTasks.filter(t => t.status === 'IN_PROGRESS').length,
-    completedThisWeek: allTasks.filter(t => t.status === 'DONE').length, // Simplified for example
-  };
+  if (error) return <div>Failed to load your work dashboard. Please try again.</div>;
+  if (isLoading || !data) return <PageLoader />;
+
+  const { user, stats, allTasks, clientTasks, departmentProjectGroups } = data;
+  
+  // --- CHANGE: Filter out 'DONE' tasks for display in tables ---
+  const filterDoneTasks = (tasks: Task[]) => tasks.filter(task => task.status !== 'DONE');
 
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good Morning";
     if (hour < 18) return "Good Afternoon";
     return "Good Evening";
-  }
+  };
 
   return (
-    <div className=" min-h-screen">
+    <div className="min-h-screen">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         
         {/* --- Header --- */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">{getGreeting()}! {user.name}</h1>
-            <p className="text-gray-500">Let's see what you've got on your plate today.</p>
-          </div>
-          {/* <div className="flex items-center space-x-2">
-            <Button variant="outline" className="text-gray-700">
-              <Share className="mr-2 h-4 w-4" /> Share
-            </Button>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Task
-            </Button>
-          </div> */}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">{getGreeting()}! {user.name}</h1>
+          <p className="text-muted-foreground">Here is your task summary.</p>
         </div>
 
-        {/* --- Stats Cards --- */}
+        {/* --- Stats Cards (No changes needed, 'done' count is correct) --- */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Tasks In Progress" value={stats.inProgress} icon={<Clock className="h-5 w-5 text-blue-500" />} />
-          <StatCard title="Completed This Week" value={stats.completedThisWeek} icon={<CheckCircle className="h-5 w-5 text-green-500" />} />
-          {/* Add other stats cards as needed */}
+          <StatCard title="Tasks To Do" value={stats.todo} icon={<CircleHelp className="h-5 w-5 text-muted-foreground" />} />
+          <StatCard title="In Progress" value={stats.inProgress} icon={<Clock className="h-5 w-5 text-blue-500" />} />
+          <StatCard title="In Review" value={stats.review} icon={<Star className="h-5 w-5 text-yellow-500" />} />
+          <StatCard title="Completed" value={stats.done} icon={<CheckCircle className="h-5 w-5 text-green-500" />} />
         </div>
         
         {/* --- Main Tasks Section --- */}
@@ -106,19 +108,34 @@ export default function MyWorkPage({ userId }: { userId: string }) {
                 <CardTitle>My Tasks</CardTitle>
             </CardHeader>
             <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList>
-                        <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="client">Client Projects</TabsTrigger>
-                        {departments.map((dept) => (
-                          <TabsTrigger key={dept.id} value={dept.id}>{dept.name}</TabsTrigger>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    {/* --- CHANGE: Reworked Tabs for new data structure --- */}
+                    <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-3 md:flex md:w-auto md:justify-start overflow-x-auto">
+                        <TabsTrigger value="all">
+                          <List className="mr-2 h-4 w-4" /> All Tasks
+                        </TabsTrigger>
+                        <TabsTrigger value="client">
+                          <UserCheck className="mr-2 h-4 w-4" /> Client Tasks
+                        </TabsTrigger>
+                        {departmentProjectGroups.map(group => (
+                          <TabsTrigger key={group.departmentId} value={group.departmentId}>
+                            {group.departmentName}
+                          </TabsTrigger>
                         ))}
                     </TabsList>
                     
-                    {/* Render a single content area and pass filtered tasks */}
-                    <TabsContent value={activeTab} className="mt-4">
-                        <TaskTable tasks={filteredTasks} />
+                    {/* --- CHANGE: Reworked Tab Content for new data structure --- */}
+                    <TabsContent value="all" className="mt-4">
+                      <TaskTable tasks={filterDoneTasks(allTasks)} />
                     </TabsContent>
+                    <TabsContent value="client" className="mt-4">
+                      <TaskTable tasks={filterDoneTasks(clientTasks)} />
+                    </TabsContent>
+                    {departmentProjectGroups.map(group => (
+                      <TabsContent key={group.departmentId} value={group.departmentId} className="mt-4">
+                          <TaskTable tasks={filterDoneTasks(group.tasks)} />
+                      </TabsContent>
+                    ))}
                 </Tabs>
             </CardContent>
         </Card>
@@ -128,53 +145,55 @@ export default function MyWorkPage({ userId }: { userId: string }) {
   );
 }
 
-// --- UI Sub-Components ---
 
+// --- UI Sub-Components (No changes needed in these) ---
 const TaskTable = ({ tasks }: { tasks: Task[] }) => {
-  if (tasks.length === 0) return <EmptyState />;
-
-  const getStatusBadge = (status: Task['status']) => {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return <Badge variant="default" className="bg-blue-100 text-blue-800">In Progress</Badge>;
-      case 'DONE':
-        return <Badge variant={"success"} >Completed</Badge>;
-      case 'TODO':
-        return <Badge variant="default" className="bg-yellow-100 text-yellow-800">To Do</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-  
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[60%]">Task Name</TableHead>
-          <TableHead>Status</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {tasks.map((task) => (
-          <TableRow key={task.id}>
-            <TableCell>
-                <Link href={`/projects/${task.projectId}?workspaceId=${task.workspaceId}`} className="group">
-                    <p className="font-medium text-gray-800 group-hover:text-primary">{task.title}</p>
-                    <p className="text-sm text-gray-500 group-hover:text-primary/80">Project: {task.project.name}</p>
-                </Link>
-            </TableCell>
-            <TableCell>{getStatusBadge(task.status)}</TableCell>
+    if (!tasks || tasks.length === 0) return <EmptyState />;
+ 
+    const getStatusBadge = (status: PrismaTask['status']) => {
+      switch (status) {
+        case 'IN_PROGRESS':
+          return <Badge className="text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20">In Progress</Badge>;
+        case 'DONE':
+          return <Badge className="text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20">Completed</Badge>;
+        case 'TODO':
+          return <Badge className="text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20">To Do</Badge>;
+        case 'REVIEW':
+            return <Badge className="text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20">In Review</Badge>;
+        default:
+          return <Badge variant="secondary">{status}</Badge>;
+      }
+    };
+    
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[60%]">Task Name</TableHead>
+            <TableHead>Status</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+        </TableHeader>
+        <TableBody>
+          {tasks.map((task) => (
+            <TableRow key={task.id}>
+              <TableCell>
+                  <Link href={`/projects/${task.projectId}?workspaceId=${task.workspaceId}`} className="group">
+                      <p className="font-medium group-hover:underline">{task.title}</p>
+                      <p className="text-sm text-muted-foreground group-hover:underline">Project: {task.project.name}</p>
+                  </Link>
+              </TableCell>
+              <TableCell>{getStatusBadge(task.status)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
 };
-
+ 
 const StatCard = ({ title, value, icon }: { title: string, value: number | string, icon: React.ReactNode }) => (
     <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
             {icon}
         </CardHeader>
         <CardContent>
@@ -182,23 +201,20 @@ const StatCard = ({ title, value, icon }: { title: string, value: number | strin
         </CardContent>
     </Card>
 );
-
+ 
 const EmptyState = () => (
     <div className="text-center py-16 border-2 border-dashed rounded-lg">
-      <FolderKanban className="mx-auto h-12 w-12 text-gray-400" />
-      <h3 className="mt-4 text-lg font-medium text-gray-800">No Tasks Here</h3>
-      <p className="mt-1 text-sm text-gray-500">Looks like you're all caught up in this category!</p>
+      <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground" />
+      <h3 className="mt-4 text-lg font-medium">No Active Tasks Here</h3>
+      <p className="mt-1 text-sm text-muted-foreground">Looks like you're all caught up in this category!</p>
     </div>
 );
-
+ 
 const PageLoader = () => (
     <div className="container mx-auto p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-80" />
-        </div>
-        <Skeleton className="h-10 w-32" />
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-80" />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Skeleton className="h-24 w-full" />

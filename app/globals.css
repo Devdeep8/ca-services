@@ -98,16 +98,16 @@
   --popover-foreground: oklch(95% 0.005 240);
   --border: oklch(25% 0.01 240);
   --input: oklch(25% 0.01 240);
-  --muted: oklch(25% 0.01 240);
-  --muted-foreground: oklch(60% 0.01 240);
+  --muted: oklch(22% 0.01 240);              /* ✨ Lighter muted for better tab backgrounds */
+  --muted-foreground: oklch(70% 0.01 240);   /* ✨ Brighter muted text for better readability */
 
   /* Brand & Action Colors - Lightened for dark background */
   --primary: oklch(68% 0.158 44.25);      /* Lighter orange for dark mode */
   --primary-foreground: oklch(15% 0 0);    /* Dark text for high contrast */
   --secondary: oklch(55% 0.196 265.51);   /* Lighter blue for dark mode */
   --secondary-foreground: oklch(98% 0 0);
-  --accent: oklch(28% 0.01 240);          /* ✨ New Accent: A clear, dark gray for highlights */
-  --accent-foreground: oklch(95% 0.005 240);/* ✨ Light text for contrast on the dark gray accent */
+  --accent: oklch(30% 0.02 240);             /* ✨ Lighter accent for better tab visibility */
+  --accent-foreground: oklch(95% 0.005 240); /* ✨ High contrast text on accent */
   --destructive: oklch(70% 0.22 25.5);    /* Lighter red for dark mode */
   --ring: oklch(68% 0.158 44.25);         /* ✨ Focus rings use the lighter primary orange */
 
@@ -127,6 +127,12 @@
   --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+
+  /* ✨ SHADCN TAB ENHANCEMENTS */
+  /* These work with shadcn's existing tab components */
+  /* Uncomment the lines below if you want primary-colored active tabs */
+  /* --accent: var(--primary); */
+  /* --accent-foreground: var(--primary-foreground); */
 }
 
 

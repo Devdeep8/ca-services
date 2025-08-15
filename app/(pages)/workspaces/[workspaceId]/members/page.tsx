@@ -6,10 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, UserPlus, CheckCircle2, Clock } from 'lucide-react';
+import {  UserPlus, CheckCircle2, Clock } from 'lucide-react';
 import { InviteMemberDialog } from '@/components/modals/invite-member-dialog';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 
 // Define the type for the combined list from our API

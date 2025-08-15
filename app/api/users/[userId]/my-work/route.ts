@@ -1,93 +1,118 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { TaskStatus, ProjectRole } from '@prisma/client';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: { userId: string } }
 ) {
+  // 1. Authentication & Authorization
+  const session = await getServerSession(authOptions);
+  if (!session?.user || session.user.id !== params.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const { userId } = await params;
-
-    if (!userId) {
-      return new NextResponse("User ID is required", { status: 400 });
-    }
-
-    // 1. Fetch the user's details and their role in every project they are a member of.
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      include: {
-        projectMemberships: {
-          select: {
-            projectId: true,
-            role: true,
+    // 2. Fetch all necessary data in a single, efficient query
+    const [user, tasksFromDb] = await Promise.all([
+      db.user.findUnique({
+        where: { id: params.userId },
+        select: {
+          name: true,
+          departmentId: true,
+          department: { select: { name: true } },
+        },
+      }),
+      db.task.findMany({
+        where: { assigneeId: params.userId },
+        include: {
+          project: {
+            select: {
+              id: true,
+              name: true,
+              isClient: true,
+              workspaceId: true,
+              department: {
+                select: { id: true, name: true },
+              },
+            },
           },
         },
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
 
     if (!user) {
-      return new NextResponse("User not found", { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Create a simple lookup map for the user's role in each project for quick access.
-    const projectRoles = new Map(
-      user.projectMemberships.map((mem) => [mem.projectId, mem.role])
-    );
+    // 3. Initialize arrays and maps for processing
+    const allTasks: any[] = [];
+    const clientTasks: any[] = [];
+    const departmentMap = new Map<string, { departmentName: string; tasks: any[] }>();
 
-    // 2. Fetch all potentially relevant tasks assigned to this user.
-    const allAssignedTasks = await db.task.findMany({
-      where: {
-        assigneeId: userId,
-        status: { in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW] },
-      },
-      include: {
+    // 4. Process the tasks into the required formats
+    for (const task of tasksFromDb) {
+      if (!task.project) continue; // Skip tasks without a project
+
+      // Create a clean task object for the frontend
+      const taskData = {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        projectId: task.projectId,
+        workspaceId: task.project.workspaceId,
         project: {
-          select: { id: true, name: true, isClient: true, departmentId: true },
+          name: task.project.name,
+          isClient: task.project.isClient,
         },
-      },
-      orderBy: {
-        dueDate: 'asc',
-      },
-    });
+      };
 
-    // 3. Filter and categorize tasks based on your specified priority rules.
-    const clientProjectTasks = [];
-    const myDepartmentTasks = [];
-    const otherTasks = [];
+      // Add to the 'allTasks' list
+      allTasks.push(taskData);
 
-    for (const task of allAssignedTasks) {
-      const userRoleInProject = projectRoles.get(task.project.id);
-      if (!userRoleInProject) continue;
-
-      // Apply role-based status filtering.
-      if (userRoleInProject === ProjectRole.MEMBER && task.status === TaskStatus.REVIEW) {
-        continue; // Members don't see "In Review" tasks in their work list.
-      }
-      
-      // Categorize the task.
+      // Separate into client or department groups
       if (task.project.isClient) {
-        clientProjectTasks.push(task);
-      } else if (task.project.departmentId && task.project.departmentId === user.departmentId) {
-        myDepartmentTasks.push(task);
+        // Add to the flat 'clientTasks' list
+        clientTasks.push(taskData);
       } else {
-        otherTasks.push(task);
+        // Group by department for internal tasks
+        const departmentId = task.project.department?.id ?? 'general';
+        const departmentName = task.project.department?.name ?? 'General';
+
+        if (!departmentMap.has(departmentId)) {
+          departmentMap.set(departmentId, { departmentName, tasks: [] });
+        }
+        departmentMap.get(departmentId)!.tasks.push(taskData);
       }
     }
 
-    // 4. Return the fully prepared data structure.
-    return NextResponse.json({
-      user: {
-        name: user.name,
-        avatar: user.avatar,
-      },
-      clientProjectTasks,
-      myDepartmentTasks,
-      otherTasks,
-    });
+    // 5. Calculate overall stats
+    const stats = {
+      todo: tasksFromDb.filter((t) => t.status === 'TODO').length,
+      inProgress: tasksFromDb.filter((t) => t.status === 'IN_PROGRESS').length,
+      review: tasksFromDb.filter((t) => t.status === 'REVIEW').length,
+      done: tasksFromDb.filter((t) => t.status === 'DONE').length,
+      total: tasksFromDb.length,
+    };
 
+    // 6. Construct the final payload with all three required data structures
+    const payload = {
+      user,
+      stats,
+      allTasks, // A flat list of every task
+      clientTasks, // A flat list of tasks where project.isClient is true
+      departmentProjectGroups: Array.from(departmentMap.entries()) // Tasks grouped by department
+        .map(([id, data]) => ({ departmentId: id, ...data }))
+        .sort((a, b) => a.departmentName.localeCompare(b.departmentName)),
+    };
+
+    return NextResponse.json(payload);
   } catch (error) {
-    console.error("[MY_WORK_API_ERROR]", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error('Failed to fetch user work summary:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
