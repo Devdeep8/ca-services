@@ -36,9 +36,6 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       
-      - name: Generate Prisma Client
-        # With a clean install, the simple command should work
-        run: yarn prisma generate
         
       - name: Run tests (excluding integration tests)
         env:

@@ -48,121 +48,69 @@ model VerificationToken {
 }
 
 model User {
-  id                                String                @id @default(cuid())
-  email                             String                @unique
-  name                              String
-  password                          String?
-  avatar                            String?
-  role                              Role                  @default(MEMBER)
-  createdAt                         DateTime              @default(now())
-  updatedAt                         DateTime              @updatedAt
-  resetToken                        String?
-  resetTokenExpiry                  DateTime?
-  departmentId                      String?
-  userType                          UserType              @default(INTERNAL)
-  accounts                          Account[]
-  activityLogs                      ActivityLog[]
-  projectMemberships                ProjectMember[]
-  clientProjects  Project[]             @relation("clientProjects")
-  Project                           Project[]
-  sessions                          Session[]
-  attachments                       TaskAttachment[]
-  comments                          TaskComment[]
-  assignedTasks                     Task[]                @relation("TaskAssignee")
-  reportedTasks                     Task[]                @relation("TaskReporter")
-  timeEntries                       TimeEntry[]
-  department                        Department?           @relation(fields: [departmentId], references: [id])
-  WorkspaceInvitation               WorkspaceInvitation[]
-  workspaceMemberships              WorkspaceMember[]
-  ownedWorkspaces                   Workspace[]           @relation("WorkspaceOwner")
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  name                 String
+  password             String?
+  avatar               String?
+  role                 Role                  @default(MEMBER)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  resetToken           String?
+  resetTokenExpiry     DateTime?
+  departmentId         String?
+  userType             UserType              @default(INTERNAL)
+  accounts             Account[]
+  activityLogs         ActivityLog[]
+  projectMemberships   ProjectMember[]
+  clientProjects       Project[]             @relation("clientProjects")
+  Project              Project[]
+  sessions             Session[]
+  attachments          TaskAttachment[]
+  comments             TaskComment[]
+  assignedTasks        Task[]                @relation("TaskAssignee")
+  reportedTasks        Task[]                @relation("TaskReporter")
+  timeEntries          TimeEntry[]
+  department           Department?           @relation(fields: [departmentId], references: [id])
+  WorkspaceInvitation  WorkspaceInvitation[]
+  workspaceMemberships WorkspaceMember[]
+  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
 
   @@index([departmentId], map: "users_departmentId_fkey")
   @@map("users")
 }
 
-
 model Asset {
-  id             String       @id @default(cuid())
-  assetType      AssetType
-  provider       String    @default("TVMServer")
-  name           String
-  serviceId      String?   // Order/Service ID from provider
-  description    String?   @db.Text
-
-  // Technical Details
-  domainName     String?   // Null for VPS/SSL
-  ipAddress      String?   // Null for domains
-  hostingPlan    String? 
-  serverLocation String?
-
-  // Dates
-  purchaseDate   DateTime
-  expiryDate     DateTime
-  autoRenew      Boolean   @default(false)
-  renewalPeriod  RenewalPeriod
-
-  // Status & Uptime
-  status         AssetStatus @default(ACTIVE) // Active, Expired, Pending Renewal
-  liveStatus     LiveStatus  @default(UNKNOWN) // Website live or not
-  lastChecked    DateTime?   // When live status was last checked
-
-  // Access
+  id              String        @id @default(cuid())
+  assetType       AssetType
+  provider        String        @default("TVMServer")
+  name            String
+  serviceId       String?
+  description     String?       @db.Text
+  domainName      String?
+  ipAddress       String?
+  hostingPlan     String?
+  serverLocation  String?
+  purchaseDate    DateTime
+  expiryDate      DateTime
+  autoRenew       Boolean       @default(false)
+  renewalPeriod   RenewalPeriod
+  status          AssetStatus   @default(ACTIVE)
+  liveStatus      LiveStatus    @default(UNKNOWN)
+  lastChecked     DateTime?
   controlPanelUrl String?
-  username       String?
-  password       String?     // encrypt in production
-  notes          String?     @db.Text
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  username        String?
+  password        String?
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
-enum AssetType {
-  DOMAIN
-  HOSTING
-  VPS
-  SSL
-  OTHER
-}
-
-enum RenewalPeriod {
-  MONTHLY
-  QUARTERLY
-  YEARLY
-  BIENNIAL
-  TRIENNIAL
-  CUSTOM
-}
-
-enum AssetStatus {
-  ACTIVE
-  EXPIRED
-  PENDING_RENEWAL
-}
-
-enum LiveStatus {
-  ONLINE
-  OFFLINE
-  UNKNOWN
-}
-
-// model Role {
-//   id    String @id @default(cuid())
-//   name  String @unique // e.g., "Admin", "Manager", "Member"
-//   users User[]
-
-//   @@map("roles")
-// }
-enum UserType {
-  INTERNAL
-  CLIENT
-}
-
-// This is the new model for departments.
 model Department {
-  id    String @id @default(cuid())
-  name  String @unique // e.g., "Engineering", "Design", "Marketing"
-  users User[]
+  id      String    @id @default(cuid())
+  name    String    @unique
   project Project[]
+  users   User[]
 
   @@map("departments")
 }
@@ -216,27 +164,27 @@ model WorkspaceInvitation {
 }
 
 model Project {
-  id                             String          @id @default(cuid())
-  name                           String
-  description                    String?
-  workspaceId                    String
-  status                         ProjectStatus   @default(ACTIVE)
-  priority                       Priority        @default(MEDIUM)
-  startDate                      DateTime?
-  dueDate                        DateTime?
-  createdBy                      String
-  createdAt                      DateTime        @default(now())
-  updatedAt                      DateTime        @updatedAt
-  departmentId                   String?
-  clientId                       String?
-  isClient                       Boolean         @default(false)
-  activityLogs                   ActivityLog[]
-  members                        ProjectMember[]
-  clientUser User?           @relation("clientProjects", fields: [clientId], references: [id])
-  creator                        User            @relation(fields: [createdBy], references: [id])
-  department                     Department?     @relation(fields: [departmentId], references: [id])
-  workspace                      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  tasks                          Task[]
+  id           String          @id @default(cuid())
+  name         String
+  description  String?
+  workspaceId  String
+  status       ProjectStatus   @default(ACTIVE)
+  priority     Priority        @default(MEDIUM)
+  startDate    DateTime?
+  dueDate      DateTime?
+  createdBy    String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  departmentId String?
+  clientId     String?
+  isClient     Boolean         @default(false)
+  activityLogs ActivityLog[]
+  members      ProjectMember[]
+  clientUser   User?           @relation("clientProjects", fields: [clientId], references: [id])
+  creator      User            @relation(fields: [createdBy], references: [id])
+  department   Department?     @relation(fields: [departmentId], references: [id])
+  workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks        Task[]
 
   @@index([createdBy], map: "projects_createdBy_fkey")
   @@index([workspaceId], map: "projects_workspaceId_fkey")
@@ -357,6 +305,40 @@ model ActivityLog {
   @@map("activity_logs")
 }
 
+enum AssetType {
+  DOMAIN
+  HOSTING
+  VPS
+  SSL
+  OTHER
+}
+
+enum RenewalPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  BIENNIAL
+  TRIENNIAL
+  CUSTOM
+}
+
+enum AssetStatus {
+  ACTIVE
+  EXPIRED
+  PENDING_RENEWAL
+}
+
+enum LiveStatus {
+  ONLINE
+  OFFLINE
+  UNKNOWN
+}
+
+enum UserType {
+  INTERNAL
+  CLIENT
+}
+
 enum Role {
   ADMIN
   MANAGER
@@ -394,20 +376,3 @@ enum Priority {
   HIGH
   URGENT
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
