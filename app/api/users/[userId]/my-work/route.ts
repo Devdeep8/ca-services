@@ -5,11 +5,12 @@ import { db } from '@/lib/db';
 
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   // 1. Authentication & Authorization
+  const {userId} =await params;
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.id !== params.userId) {
+  if (!session?.user || session.user.id !== userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -17,7 +18,7 @@ export async function GET(
     // 2. Fetch all necessary data in a single, efficient query
     const [user, tasksFromDb] = await Promise.all([
       db.user.findUnique({
-        where: { id: params.userId },
+        where: { id: userId },
         select: {
           name: true,
           departmentId: true,
@@ -25,7 +26,7 @@ export async function GET(
         },
       }),
       db.task.findMany({
-        where: { assigneeId: params.userId },
+        where: { assigneeId: userId },
         include: {
           project: {
             select: {
