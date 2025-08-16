@@ -27,6 +27,7 @@ import { signOut } from "next-auth/react";
 import { Separator } from "../ui/separator";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { FeedbackDialog } from "./FeedbackDialog";
 // const navLinks = [
 //   { href: "/home", label: "Home", icon: Home },
 //   { href: "/inventory", label: "Inventory", icon: Warehouse },
@@ -107,10 +108,13 @@ export function Header({ session }: { session: any }) {
         </Button>
 
         {/* Help Button */}
+        <FeedbackDialog>
+
         <Button variant="ghost" className="flex items-center gap-2">
           <HelpCircle className="h-5 w-5" />
           <span className="hidden sm:inline">Help</span>
         </Button>
+        </FeedbackDialog>
 
         {/* User Avatar with Dropdown */}
         <DropdownMenu>
