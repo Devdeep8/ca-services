@@ -84,7 +84,7 @@ export function NewTaskDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader><DialogTitle>Add a new card to {status.replace('_', ' ')}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Add a new Task to {status.replace('_', ' ')}</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="title" render={({ field }) => (
@@ -130,7 +130,7 @@ export function NewTaskDialog({
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create Card'}</Button>
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create Task'}</Button>
             </DialogFooter>
           </form>
         </Form>

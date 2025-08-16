@@ -57,7 +57,7 @@ export function KanbanColumn({
                 onTaskCreated={onTaskCreated}
             >
                 <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                    <PlusIcon className="mr-2 h-4 w-4" /> Add a card
+                    <PlusIcon className="mr-2 h-4 w-4" /> Add a Task
                 </Button>
             </NewTaskDialog>
         </div>
