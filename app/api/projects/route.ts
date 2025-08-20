@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { z } from "zod";
 import { getUserByEmail } from "@/utils/helper-server-function";
-
+// import { queueProjectCreatedNotification } from "@/services/notification-service/notification.service";
 /**
  * Fetches all projects for a given workspace, correctly identifying the project lead.
  */
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
   const userData = await getUserByEmail(session.user.email);
   const userId = userData.user?.id;
 
-  if (!userId) {
+  if (!userId || !userData.user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
@@ -161,6 +161,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // await queueProjectCreatedNotification(newProject , userData.user!);
+
     return NextResponse.json({ project: newProject }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -173,3 +175,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
