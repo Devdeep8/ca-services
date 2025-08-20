@@ -10,11 +10,11 @@ async function checkAdminAuth() {
 // PATCH a project's details
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     await checkAdminAuth();
-    const { projectId } = params;
+    const { projectId } = await params;
     const body = await request.json();
     const { name, description, status, priority, projectType, dueDate } = body;
 
