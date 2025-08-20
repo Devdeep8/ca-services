@@ -112,16 +112,20 @@ export function CreateProjectModal({
       return;
     }
 
+    if (!selectedDepartmentId) {
+    toast.error("Please select a department for this project.");
+    return;
+  }
+
     setIsLoading(true);
 
     const payload = {
       name: projectName,
       workspaceId,
-      departmentId: selectedDepartmentId || null,
+      departmentId: selectedDepartmentId ,
       // isClient,
       // clientId: isClient ? selectedClientId : null,
     };
-
     // --- USE TOAST.PROMISE FOR SUBMISSION ---
     toast.promise(
       fetch("/api/projects", {

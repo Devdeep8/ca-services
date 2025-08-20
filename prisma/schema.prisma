@@ -167,13 +167,13 @@ model WorkspaceInvitation {
 
 model Project {
   id          String        @id @default(cuid())
-  name        String
+  name        String        @unique
   description String?
   workspaceId String
   status      ProjectStatus @default(ACTIVE)
   priority    Priority      @default(MEDIUM)
   projectType ProjectType   @default(FIXED_TERM) // <-- New field
-
+  zohoFolderLink String?    
   startDate    DateTime?
   dueDate      DateTime?
   createdBy    String

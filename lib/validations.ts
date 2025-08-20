@@ -65,6 +65,18 @@ export const resetPasswordSchema = z.object({
     .max(32, 'Password must be at most 32 characters'),
 })
 
+
+
+export   const createProjectSchema = z.object({
+    name: z.string().min(1, "Project name is required."),
+    workspaceId: z.string().min(1, "Workspace ID is required."),
+    departmentId: z.string().optional().nullable(),
+    // isClient: z.boolean().optional(),
+    // clientId: z.string().optional().nullable(),
+  });
+
+  
+
 export type SignUpInput = z.infer<typeof signUpSchema>
 export type SignInInput = z.infer<typeof signInSchema>
 export type WorkspaceInput = z.infer<typeof workspaceSchema>

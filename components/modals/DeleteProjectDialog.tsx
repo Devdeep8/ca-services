@@ -45,7 +45,7 @@ export function DeleteProjectDialog({ isOpen, onClose, onConfirm, projectName }:
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the <strong>{projectName}</strong> project and all of its associated data.
             <br /><br />
-            Please type the project name to confirm.
+            Please type the project name  <strong>{projectName}</strong> to confirm.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <Input
