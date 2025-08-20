@@ -1,8 +1,8 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { Prisma, ProjectRole } from "@prisma/client";
+import { hasUserRole } from "@/services/role-services/has-user-role.service";
 
 /**
  * Zod schema for validating the incoming request body for PATCH requests.
@@ -11,7 +11,7 @@ import { Prisma, ProjectRole } from "@prisma/client";
 const updateProjectSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").optional(),
   description: z.string().optional().nullable(),
-status: z.enum(["ACTIVE", "ON_HOLD", "COMPLETED" , "ARCHIVED"]).optional(),
+  status: z.enum(["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
   startDate: z.coerce.date().optional().nullable(),
   dueDate: z.coerce.date().optional().nullable(),
@@ -89,7 +89,8 @@ export async function PATCH(
     );
   }
 
-  const { members, createdBy, departmentId ,...scalarProjectData } = validation.data;
+  const { members, createdBy, departmentId, ...scalarProjectData } =
+    validation.data;
 
   try {
     // Fetch current project to compare and only update changed fields
@@ -109,27 +110,45 @@ export async function PATCH(
     const updatePayload: Prisma.ProjectUpdateInput = {};
 
     // Handle each field individually to ensure proper typing
-    if (scalarProjectData.name !== undefined && scalarProjectData.name !== existingProject.name) {
+    if (
+      scalarProjectData.name !== undefined &&
+      scalarProjectData.name !== existingProject.name
+    ) {
       updatePayload.name = scalarProjectData.name;
     }
 
-    if (scalarProjectData.description !== undefined && scalarProjectData.description !== existingProject.description) {
+    if (
+      scalarProjectData.description !== undefined &&
+      scalarProjectData.description !== existingProject.description
+    ) {
       updatePayload.description = scalarProjectData.description;
     }
 
-    if (scalarProjectData.status !== undefined && scalarProjectData.status !== existingProject.status) {
+    if (
+      scalarProjectData.status !== undefined &&
+      scalarProjectData.status !== existingProject.status
+    ) {
       updatePayload.status = scalarProjectData.status;
     }
 
-    if (scalarProjectData.priority !== undefined && scalarProjectData.priority !== existingProject.priority) {
+    if (
+      scalarProjectData.priority !== undefined &&
+      scalarProjectData.priority !== existingProject.priority
+    ) {
       updatePayload.priority = scalarProjectData.priority;
     }
 
-    if (scalarProjectData.startDate !== undefined && scalarProjectData.startDate !== existingProject.startDate) {
+    if (
+      scalarProjectData.startDate !== undefined &&
+      scalarProjectData.startDate !== existingProject.startDate
+    ) {
       updatePayload.startDate = scalarProjectData.startDate;
     }
 
-    if (scalarProjectData.dueDate !== undefined && scalarProjectData.dueDate !== existingProject.dueDate) {
+    if (
+      scalarProjectData.dueDate !== undefined &&
+      scalarProjectData.dueDate !== existingProject.dueDate
+    ) {
       updatePayload.dueDate = scalarProjectData.dueDate;
     }
 
@@ -137,14 +156,17 @@ export async function PATCH(
       updatePayload.creator = { connect: { id: createdBy } };
     }
 
-if (departmentId !== undefined && departmentId !== existingProject.departmentId) {
-        if (departmentId === null) {
-            // If the form sends null, disconnect the department
-            updatePayload.department = { disconnect: true };
-        } else {
-            // Otherwise, connect to the new department
-            updatePayload.department = { connect: { id: departmentId } };
-        }
+    if (
+      departmentId !== undefined &&
+      departmentId !== existingProject.departmentId
+    ) {
+      if (departmentId === null) {
+        // If the form sends null, disconnect the department
+        updatePayload.department = { disconnect: true };
+      } else {
+        // Otherwise, connect to the new department
+        updatePayload.department = { connect: { id: departmentId } };
+      }
     }
 
     // Update the project (no members yet)
@@ -200,3 +222,4 @@ if (departmentId !== undefined && departmentId !== existingProject.departmentId)
     );
   }
 }
+
