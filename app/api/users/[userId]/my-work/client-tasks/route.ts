@@ -13,7 +13,7 @@ export async function GET(
       where: {
         assigneeId: userId,
         project: {
-          isClient: true, // Filter for client projects
+          isClientProject: true, // Filter for client projects
         },
         // Filter for active tasks
         status: { in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },

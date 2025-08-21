@@ -45,7 +45,7 @@ export async function GET(
       },
       include: {
         project: {
-          select: { id: true, name: true, isClient: true, departmentId: true },
+          select: { id: true, name: true, isClientProject: true, departmentId: true },
         },
       },
       orderBy: {

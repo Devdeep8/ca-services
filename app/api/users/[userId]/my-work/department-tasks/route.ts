@@ -19,7 +19,7 @@ export async function GET(
         assigneeId: userId,
         project: {
           departmentId: departmentId, // Filter for the specific department
-          isClient: false,      // Exclude client projects from these tabs
+          isClientProject: false,      // Exclude client projects from these tabs
         },
         status: { in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
       },
