@@ -16,42 +16,60 @@ export class ProjectCreationError extends Error {
 }
 
 /**
- * Creates a project record in the database.
- * @throws {ProjectCreationError} Throws a specific error if the database operation fails.
+ * Creates a project and assigns the creator as the project lead in a single transaction.
+ * @throws {ProjectCreationError} Throws a specific error if the operation fails.
  */
 export const createProjectInDb = async (projectData: ProjectCreationData) => {
-  // First check for existing project (better UX)
-  const existingProject = await checkProjectNameExists({ 
-    name: projectData.name, 
-    workspaceId: projectData.workspaceId 
+  // First, check for an existing project for better UX before starting a transaction.
+  const existingProject = await checkProjectNameExists({
+    name: projectData.name,
+    workspaceId: projectData.workspaceId,
   });
-  
+
   if (existingProject) {
-    throw new ProjectCreationError("Project already exists ,Please Search and Add Task .");
+    throw new ProjectCreationError("Project already exists. Please search and add tasks to it.");
   }
-    
+
   try {
-    const newProject = await db.project.create({
-      data: {
-        name: projectData.name,
-        workspaceId: projectData.workspaceId,
-        createdBy: projectData.userId,
-        dueDate: projectData.dueDate,
-        departmentId: projectData.departmentId,
-      },
+    // Use a transaction to ensure both operations (project creation and member assignment) succeed or fail together.
+    const result = await db.$transaction(async (tx) => {
+      // 1. Create the project using the transaction client 'tx'
+      const newProject = await tx.project.create({
+        data: {
+          name: projectData.name,
+          workspaceId: projectData.workspaceId,
+          createdBy: projectData.userId,
+          dueDate: projectData.dueDate,
+          departmentId: projectData.departmentId,
+        },
+      });
+
+      // 2. Add the creator as a 'LEAD' member of the newly created project.
+      // This assumes you have a `projectMember` model in your Prisma schema.
+      await tx.projectMember.create({
+        data: {
+          projectId: newProject.id,
+          userId: projectData.userId,
+          role: 'LEAD', // Assigning the creator as the lead
+        },
+      });
+
+      // 3. Return the necessary data from the transaction.
+      return { project: newProject, creatorId: projectData.userId };
     });
-    return { project: newProject, creatorId: projectData.userId };
+
+    return result;
 
   } catch (error: any) {
-    // Handle Prisma unique constraint error as fallback
+    // Handle Prisma unique constraint error as a fallback.
     if (error.code === 'P2002') {
       throw new ProjectCreationError("Project name already exists in this workspace.");
     }
-    
-    // Log the original, technical error for debugging
-    console.error("DATABASE_ERROR: Failed to create project.", error);
-    
-    // Throw your new, specific error to the calling function
+
+    // Log the original, technical error for debugging purposes.
+    console.error("DATABASE_ERROR: Failed to execute project creation transaction.", error);
+
+    // Throw a user-friendly error to the calling function.
     throw new ProjectCreationError("Could not save the project to the database.");
   }
 };
@@ -67,7 +85,7 @@ export const checkProjectNameExists = async ({ name, workspaceId }: { name: stri
   const existingProject = await db.project.findFirst({
     where: {
       name: name,
-      workspaceId: workspaceId, 
+      workspaceId: workspaceId,
     },
   });
 
