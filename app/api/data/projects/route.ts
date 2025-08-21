@@ -65,10 +65,13 @@ export async function GET(req: NextRequest) {
         include: {
           creator: { select: { id: true, name: true, avatar: true } },
           department: { select: { id: true, name: true } },
+          clientUser: { select: { id: true, name: true, avatar: true } },
+          internalProduct: { select: { id: true, name: true} },
           members: {
             where: { role: "LEAD" },
             include: { user: { select: { id: true, name: true, avatar: true } } },
           },
+          _count: { select: { tasks: true } },
         },
       }),
       db.project.count({ where }),

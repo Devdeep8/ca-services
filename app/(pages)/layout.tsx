@@ -109,23 +109,7 @@ export default function DashboardLayout({
   }
 
   // If not authenticated, show sign-in prompt
-  if (status !== "authenticated") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center p-8 bg-card rounded-lg shadow-md border">
-          <h1 className="text-2xl font-bold mb-4">
-            Please sign in
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            You need to be signed in to access the dashboard.
-          </p>
-          <Button asChild>
-            <Link href="/sign-in">Sign In</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
+
 
   // Define navigation groups with proper structure
   const navigationGroups: NavigationGroup[] = [
@@ -144,7 +128,7 @@ export default function DashboardLayout({
               icon: FolderOpen,
             },
             {
-              name: "Assigend to Me",
+              name: "My Task",
               href: `/projects/user-work/${session?.user?.id}`,
               icon: FolderOpen,
             },

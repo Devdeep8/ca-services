@@ -67,14 +67,46 @@ export const resetPasswordSchema = z.object({
 
 
 
-export   const createProjectSchema = z.object({
-    name: z.string().min(1, "Project name is required."),
-    workspaceId: z.string().min(1, "Workspace ID is required."),
-    departmentId: z.string().optional().nullable(),
-    // isClient: z.boolean().optional(),
-    // clientId: z.string().optional().nullable(),
-  });
 
+export const createProjectSchema = z.object({
+  name: z.string().min(1, "Project name is required."),
+  workspaceId: z.string().min(1, "Workspace ID is required."),
+  departmentId: z.string().min(1, "Please select a department."),
+
+  // --- NEW FIELDS ---
+  // Determines which of the next two fields is required.
+  isClientProject: z.boolean(),
+
+  // For external clients (users).
+  clientId: z.string().optional().nullable(),
+
+  // For internal products.
+  internalProductId: z.string().optional().nullable(),
+})
+.superRefine((data, ctx) => {
+  // If it's a project for an external client...
+  if (data.isClientProject) {
+    // ...then a clientId must be provided.
+    if (!data.clientId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A client must be selected for external client projects.",
+        path: ["clientId"], // This links the error to the clientId field.
+      });
+    }
+  } 
+  // Otherwise, it's an internal project...
+  else {
+    // ...so an internalProductId must be provided.
+    if (!data.internalProductId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "An internal product must be selected for internal projects.",
+        path: ["internalProductId"], // Links the error to the internalProductId field.
+      });
+    }
+  }
+});
   
 
 export type SignUpInput = z.infer<typeof signUpSchema>

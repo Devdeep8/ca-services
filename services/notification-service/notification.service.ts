@@ -1,6 +1,4 @@
 import { Queue } from 'bullmq';
-import { de } from 'date-fns/locale';
-
 // Define types for the data we'll be passing around.
 // These should ideally come from a shared types package or be based on your Prisma schema.
 interface Project {

@@ -78,6 +78,11 @@ interface Project {
   status: string;
   lead: UserInfo;
   department?: { id: string; name: string };
+  client?: { id: string; name: string };
+  internalProduct?: { id: string; name: string };
+  _count: {
+    tasks : number
+  }
 }
 
 interface DepartmentStats {
@@ -133,6 +138,7 @@ export default function ProjectPage() {
       search: debouncedSearch,
       status: filters.status,
       departmentId: filters.departmentId,
+
     });
     return `/api/data/projects?${params.toString()}`;
   }, [workspace, page, debouncedSearch, filters.status, filters.departmentId]);
@@ -592,6 +598,8 @@ const ProjectTable = ({
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
+            <TableHead className="hidden md:table-cell">Task No</TableHead>
+            <TableHead className="hidden md:table-cell">Client Name</TableHead>
             <TableHead className="hidden md:table-cell">Department</TableHead>
             <TableHead>Lead</TableHead>
             <TableHead className="hidden lg:table-cell">Due Date</TableHead>
@@ -611,6 +619,26 @@ const ProjectTable = ({
                 className="font-medium cursor-pointer hover:underline"
               >
                 {project.name}
+              </TableCell>
+              <TableCell
+                onClick={() =>
+                  router.push(
+                    `/projects/${project.id}?workspaceId=${workspaceId}`
+                  )
+                }
+                className="font-medium cursor-pointer hover:underline"
+              >
+                {project._count.tasks}
+              </TableCell>
+              <TableCell
+                onClick={() =>
+                  router.push(
+                    `/projects/${project.id}?workspaceId=${workspaceId}`
+                  )
+                }
+                className="font-medium cursor-pointer hover:underline"
+              >
+                {project.internalProduct?.name || project.client?.name || "N/A"}
               </TableCell>
               <TableCell
                 onClick={() =>

@@ -15,10 +15,18 @@ jest.mock("sonner", () => ({
   toast: {
     error: jest.fn(),
     promise: jest.fn((promise, options) => {
-      promise.then(options.success).catch(options.error);
+      // Ensure the promise resolves for testing success paths
+      return promise.then(options.success).catch(options.error);
     }),
   },
 }));
+
+// Mock the nested AddInternalProductModal to isolate the component under test
+jest.mock("@/components/modals/AddInternalProductModal", () => ({
+    // The path to AddInternalProductModal might need adjustment
+    AddInternalProductModal: () => <button>Add Product</button>,
+}));
+
 
 // Mock fetch API
 global.fetch = jest.fn();
@@ -28,19 +36,57 @@ const mockRouter = {
 };
 (useRouter as jest.Mock).mockReturnValue(mockRouter);
 
+// Mock data for all API calls
 const mockDepartments = [{ id: "dept-1", name: "Engineering" }];
-// We need to mock clients as well, even if it's an empty array
 const mockClients = [{ id: "client-1", name: "Global Tech Inc." }];
+const mockInternalProducts = [{ id: "prod-1", name: "Project Phoenix" }];
 
 // Helper function to generate unique project names
 const generateUniqueProjectName = () => {
-  return `Test Project ${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `Test Project ${Date.now()}`;
 };
+
+// Helper function to select an option from a ShadCN/Radix Select dropdown
+const selectFromDropdown = async (triggerText: string, optionText: string) => {
+  fireEvent.click(screen.getByText(triggerText));
+  const option = await screen.findByRole('option', { name: optionText });
+  fireEvent.click(option);
+};
+
 
 describe("CreateProjectModal", () => {
   beforeEach(() => {
     (fetch as jest.Mock).mockClear();
     mockRouter.refresh.mockClear();
+    (jest.requireMock("sonner").toast.error as jest.Mock).mockClear();
+
+    (fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url === "/api/departments") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockDepartments),
+        });
+      }
+      if (url === "/api/get/users?userType=CLIENT") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockClients),
+        });
+      }
+      if (url === "/api/internal-products") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockInternalProducts),
+        });
+      }
+      if (url === "/api/projects") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ project: { id: "proj-123", name: "New Project" } }),
+        });
+      }
+      return Promise.reject(new Error(`Unhandled request: ${url}`));
+    });
   });
 
   it('should render the "New Project" button', () => {
@@ -50,85 +96,36 @@ describe("CreateProjectModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("should open the dialog and fetch initial data when the button is clicked", async () => {
-    // Mock successful API responses for BOTH departments and clients
-    (fetch as jest.Mock)
-      .mockResolvedValueOnce({ ok: true, json: async () => mockDepartments })
-      .mockResolvedValueOnce({ ok: true, json: async () => mockClients });
-
+  it("should open the dialog and fetch all initial data when the button is clicked", async () => {
     render(<CreateProjectModal workspaceId="ws-123" />);
-
     fireEvent.click(screen.getByRole("button", { name: /new project/i }));
 
-    // Assert that the dialog is now open
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
-    expect(screen.getByText("Select a department")).toBeInTheDocument();
+    expect(screen.getByText("Select a product")).toBeInTheDocument();
 
-    // Assert that fetch was called for BOTH endpoints
-    expect(fetch).toHaveBeenCalledWith("/api/departments");
-    expect(fetch).toHaveBeenCalledWith("/api/get/users?userType=CLIENT");
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith("/api/departments");
+      expect(fetch).toHaveBeenCalledWith("/api/get/users?userType=CLIENT");
+      expect(fetch).toHaveBeenCalledWith("/api/internal-products");
+    });
   });
 
-  it("should submit the form with only project name and department", async () => {
+  it("should submit the form for an INTERNAL project by default", async () => {
     const uniqueProjectName = generateUniqueProjectName();
-    
-    // Mock the 3 fetch calls
-    (fetch as jest.Mock)
-      .mockResolvedValueOnce({ ok: true, json: async () => mockDepartments }) // 1. GET departments
-      .mockResolvedValueOnce({ ok: true, json: async () => mockClients }) // 2. GET clients
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          project: { id: "proj-123", name: uniqueProjectName },
-        }),
-      }); // 3. POST success → mock it instead of real DB
 
     render(<CreateProjectModal workspaceId="ws-123" />);
-
-    // Open modal
     fireEvent.click(screen.getByRole("button", { name: /new project/i }));
-
-    // Wait for modal to open and data to load
     await screen.findByRole("dialog");
 
-    // Wait for the select to be populated (departments loaded)
-    await waitFor(() => {
-      expect(screen.getByText("Select a department")).toBeInTheDocument();
-    });
-
-    // Fill project name with unique name
     fireEvent.change(screen.getByLabelText(/name/i), {
       target: { value: uniqueProjectName },
     });
 
-    // Select department - find the select trigger
-    const selectTrigger = screen.getByRole("combobox");
-    fireEvent.click(selectTrigger);
+    await selectFromDropdown("Select a department", "Engineering");
+    await selectFromDropdown("Select a product", "Project Phoenix");
+    fireEvent.click(screen.getByRole("button", { name: /create project/i }));
 
-    // Wait for the dropdown options to appear and click on Engineering
-    // Use getAllByText to handle multiple elements and select the clickable one
-    await waitFor(() => {
-      const engineeringOptions = screen.getAllByText("Engineering");
-      // Find the option that's clickable (not aria-hidden)
-      const clickableOption = engineeringOptions.find(option => 
-        !option.closest('[aria-hidden="true"]')
-      );
-      if (clickableOption) {
-        fireEvent.click(clickableOption);
-      } else {
-        // Fallback: click the first option
-        fireEvent.click(engineeringOptions[0]);
-      }
-    });
-
-    // Submit form
-    const createButton = screen.getByRole("button", {
-      name: /create project/i,
-    });
-    fireEvent.click(createButton);
-
-    // Assert POST payload
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith("/api/projects", {
         method: "POST",
@@ -137,13 +134,94 @@ describe("CreateProjectModal", () => {
           name: uniqueProjectName,
           workspaceId: "ws-123",
           departmentId: "dept-1",
+          isClientProject: false,
+          clientId: null,
+          internalProductId: "prod-1",
         }),
       });
     });
 
-    // Ensure modal closes
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should submit the form for a CLIENT project when toggled", async () => {
+    const uniqueProjectName = generateUniqueProjectName();
+
+    render(<CreateProjectModal workspaceId="ws-123" />);
+    fireEvent.click(screen.getByRole("button", { name: /new project/i }));
+    await screen.findByRole("dialog");
+
+    const clientSwitch = screen.getByLabelText(/External Client Project/i);
+    fireEvent.click(clientSwitch);
+
+    expect(await screen.findByText("Select a client")).toBeInTheDocument();
+    expect(screen.queryByText("Select a product")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/name/i), {
+      target: { value: uniqueProjectName },
+    });
+
+    await selectFromDropdown("Select a department", "Engineering");
+    await selectFromDropdown("Select a client", "Global Tech Inc.");
+    fireEvent.click(screen.getByRole("button", { name: /create project/i }));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: uniqueProjectName,
+          workspaceId: "ws-123",
+          departmentId: "dept-1",
+          isClientProject: true,
+          clientId: "client-1",
+          internalProductId: null,
+        }),
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should show validation error if required fields are missing", async () => {
+    render(<CreateProjectModal workspaceId="ws-123" />);
+    fireEvent.click(screen.getByRole("button", { name: /new project/i }));
+    await screen.findByRole("dialog");
+
+    const submitButton = screen.getByRole("button", { name: /create project/i });
+    const clientSwitch = screen.getByLabelText(/External Client Project/i);
+
+    // --- FIX: Add project name to test subsequent validations ---
+    // The component checks for a name first, so we must provide one.
+    fireEvent.change(screen.getByLabelText(/name/i), {
+        target: { value: "Test Validation Project" },
+    });
+
+    // Case 1: No department selected
+    fireEvent.click(submitButton);
+    await waitFor(() => {
+       expect(jest.requireMock("sonner").toast.error).toHaveBeenCalledWith("Please select a department for this project.");
+    });
+
+    // Select a department to proceed
+    await selectFromDropdown("Select a department", "Engineering");
+
+    // Case 2: No internal product selected (default)
+    fireEvent.click(submitButton);
+     await waitFor(() => {
+       expect(jest.requireMock("sonner").toast.error).toHaveBeenCalledWith("Please select an internal product.");
+    });
+   
+    // Case 3: No client selected (after toggling switch)
+    fireEvent.click(clientSwitch);
+    await screen.findByText("Select a client"); // Wait for UI update
+    fireEvent.click(submitButton);
+     await waitFor(() => {
+       expect(jest.requireMock("sonner").toast.error).toHaveBeenCalledWith("Please select an external client.");
     });
   });
 });

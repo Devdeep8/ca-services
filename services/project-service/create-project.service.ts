@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { AppError , ProjectCreationError } from '@/utils/errors';
 
 export interface ProjectCreationData {
   name: string;
@@ -6,34 +7,46 @@ export interface ProjectCreationData {
   userId: string;
   dueDate: Date;
   departmentId: string;
+  isClientProject: boolean;
+  clientId?: string;
+  internalProductId?: string;
 }
 
-export class ProjectCreationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ProjectCreationError';
-  }
-}
 
 /**
  * Creates a project and assigns the creator as the project lead in a single transaction.
  * @throws {ProjectCreationError} Throws a specific error if the operation fails.
  */
 export const createProjectInDb = async (projectData: ProjectCreationData) => {
-  // First, check for an existing project for better UX before starting a transaction.
+  // --- VALIDATION ---
+  if (projectData.isClientProject && !projectData.clientId) {
+    throw new ProjectCreationError(
+      "A Client ID is required when creating a project for an external client.",
+      "VALIDATION_ERROR"
+    );
+  }
+  if (!projectData.isClientProject && !projectData.internalProductId) {
+    throw new ProjectCreationError(
+      "An Internal Product ID is required when creating an internal project.",
+      "VALIDATION_ERROR"
+    );
+  }
+
   const existingProject = await checkProjectNameExists({
     name: projectData.name,
     workspaceId: projectData.workspaceId,
   });
 
   if (existingProject) {
-    throw new ProjectCreationError("Project already exists. Please search and add tasks to it.");
+    throw new ProjectCreationError(
+      "Project already exists. Please search and add tasks to it.",
+      "DUPLICATE_ERROR"
+    );
   }
 
+  // --- DB TRANSACTION ---
   try {
-    // Use a transaction to ensure both operations (project creation and member assignment) succeed or fail together.
     const result = await db.$transaction(async (tx) => {
-      // 1. Create the project using the transaction client 'tx'
       const newProject = await tx.project.create({
         data: {
           name: projectData.name,
@@ -41,39 +54,48 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
           createdBy: projectData.userId,
           dueDate: projectData.dueDate,
           departmentId: projectData.departmentId,
+          isClientProject: projectData.isClientProject,
+          clientId: projectData.isClientProject ? projectData.clientId : null,
+          internalProductId: !projectData.isClientProject ? projectData.internalProductId : null,
         },
       });
 
-      // 2. Add the creator as a 'LEAD' member of the newly created project.
-      // This assumes you have a `projectMember` model in your Prisma schema.
       await tx.projectMember.create({
         data: {
           projectId: newProject.id,
           userId: projectData.userId,
-          role: 'LEAD', // Assigning the creator as the lead
+          role: 'LEAD',
         },
       });
 
-      // 3. Return the necessary data from the transaction.
       return { project: newProject, creatorId: projectData.userId };
     });
 
     return result;
-
   } catch (error: any) {
-    // Handle Prisma unique constraint error as a fallback.
+    // Known Prisma constraint error
     if (error.code === 'P2002') {
-      throw new ProjectCreationError("Project name already exists in this workspace.");
+      throw new ProjectCreationError(
+        "Project name already exists in this workspace.",
+        "DB_CONSTRAINT_ERROR",
+        error // log details
+      );
     }
 
-    // Log the original, technical error for debugging purposes.
-    console.error("DATABASE_ERROR: Failed to execute project creation transaction.", error);
+    // Log unexpected errors with full details
+    console.error("[PROJECT_CREATION] Unexpected DB error:", {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+      meta: error.meta,
+    });
 
-    // Throw a user-friendly error to the calling function.
-    throw new ProjectCreationError("Could not save the project to the database.");
+    throw new ProjectCreationError(
+      "Could not save the project due to an unexpected error.",
+      "UNEXPECTED_ERROR"
+    );
   }
 };
-
 /**
  * Checks if a project with the given name already exists in a workspace.
  * @param {object} params - The parameters for the check.

@@ -8,8 +8,8 @@ import { createProjectSchema } from "@/lib/validations";
 import {
   createProjectInDb,
   ProjectCreationData,
-  ProjectCreationError,
 } from "@/services/project-service/create-project.service";
+import { ProjectCreationError } from "@/utils/errors";
 // import { queueProjectCreatedNotification } from "@/services/notification-service/notification.service";
 /**
  * Fetches all projects for a given workspace, correctly identifying the project lead.
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     // --- 2. PARSE THE FULL PAYLOAD ---
-    const { name, workspaceId, departmentId } = createProjectSchema.parse(body);
+    const { name, workspaceId, departmentId , isClientProject, clientId , internalProductId } = createProjectSchema.parse(body);
 
     // Basic validation: if it's a client project, a client ID must be provided.
     // if (isClient && !clientId) {
@@ -141,45 +141,29 @@ export async function POST(req: NextRequest) {
       departmentId: departmentId,
       userId: userId,
       dueDate: dueDate,
+      isClientProject: isClientProject ,
+      clientId: isClientProject? clientId:null ,
+      internalProductId: internalProductId ? internalProductId :null,
     };
 
     const projectCeation = await createProjectInDb(
       projectData as ProjectCreationData
     );
 
-    // const newProject = await db.project.create({
-    //   data: {
-    //     name,
-    //     workspaceId,
-    //     createdBy: userId,
-    //     dueDate,
-    //     // --- 3. ADD NEW DATA TO THE CREATE CALL ---
-    //     departmentId: departmentId,
-    //     // isClient: isClient,
-    //     // clientId: isClient ? clientId : null, // Only store clientId if it's a client project
 
-    //     // Add the creator as the first member of the project with a LEAD role
-    //     members: {
-    //       create: {
-    //         userId: userId,
-    //         role: "LEAD",
-    //       },
-    //     },
-    //   },
-    // });
-
-    // await queueProjectCreatedNotification(newProject , userData.user!);
+    // await queueProjectCreatedNotification(projectCeation.project , userData.user!);
 
     return NextResponse.json(
       { project: projectCeation.project, creator: projectCeation.creatorId },
       { status: 201 }
     );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+  } catch (error : any) {
+   if (error instanceof z.ZodError) {
+      // This line is crucial for returning a real array
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
 
-    if (error instanceof ProjectCreationError) {
+    if (error.name === 'ProjectCreationError') {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     // console.error("Failed to create project:", error);

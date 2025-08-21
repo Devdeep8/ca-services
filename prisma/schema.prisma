@@ -164,7 +164,13 @@ model WorkspaceInvitation {
   @@index([invitedById], map: "workspace_invitations_invitedById_fkey")
   @@map("workspace_invitations")
 }
-
+model InternalProduct {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
 model Project {
   id          String        @id @default(cuid())
   name        String        @unique
@@ -181,13 +187,15 @@ model Project {
   updatedAt    DateTime        @updatedAt
   departmentId String?
   clientId     String?
-  isClient     Boolean         @default(false)
+  isClientProject   Boolean         @default(false) // Renamed from 'isClient' for clarity
   activityLogs ActivityLog[]
   members      ProjectMember[]
   clientUser   User?           @relation("clientProjects", fields: [clientId], references: [id])
   creator      User            @relation(fields: [createdBy], references: [id])
   department   Department?     @relation(fields: [departmentId], references: [id])
   workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  internalProductId String?
+  internalProduct   InternalProduct? @relation(fields: [internalProductId], references: [id])
   tasks        Task[]
 
   @@index([createdBy], map: "projects_createdBy_fkey")

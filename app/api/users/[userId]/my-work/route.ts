@@ -32,7 +32,7 @@ export async function GET(
             select: {
               id: true,
               name: true,
-              isClient: true,
+              isClientProject: true,
               workspaceId: true,
               department: {
                 select: { id: true, name: true },
@@ -68,7 +68,7 @@ export async function GET(
         workspaceId: task.project.workspaceId,
         project: {
           name: task.project.name,
-          isClient: task.project.isClient,
+          isClientProject: task.project.isClientProject,
         },
       };
 
@@ -76,7 +76,7 @@ export async function GET(
       allTasks.push(taskData);
 
       // Separate into client or department groups
-      if (task.project.isClient) {
+      if (task.project.isClientProject) {
         // Add to the flat 'clientTasks' list
         clientTasks.push(taskData);
       } else {
@@ -105,7 +105,7 @@ export async function GET(
       user,
       stats,
       allTasks, // A flat list of every task
-      clientTasks, // A flat list of tasks where project.isClient is true
+      clientTasks, // A flat list of tasks where project.isClientProject is true
       departmentProjectGroups: Array.from(departmentMap.entries()) // Tasks grouped by department
         .map(([id, data]) => ({ departmentId: id, ...data }))
         .sort((a, b) => a.departmentName.localeCompare(b.departmentName)),
