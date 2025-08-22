@@ -38,6 +38,7 @@ export interface WorkspaceMember {
 }
 
 export interface Project {
+  lead: any
   id: string
   name: string
   description?: string
@@ -53,7 +54,6 @@ export interface Project {
   departments: Department[]
   creator: User
   members: ProjectMember[]
-  columns: Column[]
   tasks: Task[]
   activityLogs: ActivityLog[]
 }
@@ -68,16 +68,6 @@ export interface ProjectMember {
   user: User
 }
 
-export interface Column {
-  id: string
-  name: string
-  projectId: string
-  position: number
-  color: string
-  createdAt: Date
-  project: Project
-  tasks: Task[]
-}
 
 export interface Task {
   id: string
@@ -96,7 +86,6 @@ export interface Task {
   dueDate?: Date
   createdAt: Date
   updatedAt: Date
-  column: Column
   project: Project
   assignee?: User
   reporter: User
@@ -157,9 +146,21 @@ export interface ActivityLog {
   task?: Task
 }
 
-export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+export enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
+
+export enum TaskStatus {
+  TODO = 'TODO',
+  IN_PROGRESS = 'IN_PROGRESS',
+  REVIEW = 'REVIEW',
+  DONE = 'DONE',
+}
+
 export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
 export type Role = 'ADMIN' | 'MANAGER' | 'MEMBER'
 export type WorkspaceRole = 'OWNER' | 'ADMIN' | 'MEMBER'
 export type ProjectRole = 'LEAD' | 'MEMBER' 

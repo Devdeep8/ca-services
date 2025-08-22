@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { ProjectRole, TaskStatus } from '@prisma/client';
 import { authorizeProjectMember, AuthorizationError } from './auth.service';
-
+import { TaskFormData } from '@/lib/zod';
 type TaskUpdateData = {
   id: string;
   position: number;
@@ -78,4 +78,48 @@ export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
       });
     }
   });
+}
+
+
+
+
+// lib/services/task.service.ts
+
+import { ProjectCreationError } from "@/utils/errors"; // Import your custom error
+
+/**
+ * Creates a new task after performing business logic checks.
+ * @param data - Validated data from the request body.
+ * @param userId - The ID of the authenticated user.
+ * @throws {ProjectCreationError} if the user is not a member of the project.
+ */
+export async function createTask(data: TaskFormData, userId: string) {
+  
+  // Business Logic 1: Verify user membership
+  const projectMember = await db.projectMember.findUnique({
+    where: {
+      projectId_userId: { projectId: data.projectId, userId: userId },
+    },
+  });
+
+  // --- MODIFIED: Throw a specific error instead of a generic one ---
+  if (!projectMember) {
+    throw new ProjectCreationError(
+      'You are not authorized to create tasks in this project.',
+      'FORBIDDEN'
+    );
+  }
+
+  // Business Logic 2: Calculate the new task's position
+
+  // Database Operation: Create the task
+  const newTask = await db.task.create({
+    data: {
+      ...data,
+      position: 0,
+      actualHours: 0,
+    },
+  });
+
+  return newTask;
 }
