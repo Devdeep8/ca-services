@@ -34,7 +34,10 @@ export async function GET(req: NextRequest) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
     if (!workspaceId) {
-      return NextResponse.json({ error: "Workspace ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Workspace ID is required" },
+        { status: 400 }
+      );
     }
 
     const member = await db.workspaceMember.findFirst({
@@ -51,8 +54,8 @@ export async function GET(req: NextRequest) {
       AND: [
         // The 'mode' property has been removed.
         search ? { name: { contains: search } } : {},
-        status && status !== 'ALL' ? { status: status as any } : {},
-        departmentId && departmentId !== 'ALL' ? { departmentId } : {},
+        status && status !== "ALL" ? { status: status as any } : {},
+        departmentId && departmentId !== "ALL" ? { departmentId } : {},
       ],
     };
 
@@ -66,10 +69,11 @@ export async function GET(req: NextRequest) {
           creator: { select: { id: true, name: true, avatar: true } },
           department: { select: { id: true, name: true } },
           clientUser: { select: { id: true, name: true, avatar: true } },
-          internalProduct: { select: { id: true, name: true} },
+          internalProduct: { select: { id: true, name: true } },
           members: {
-            where: { role: "LEAD" },
-            include: { user: { select: { id: true, name: true, avatar: true } } },
+            include: {
+              user: { select: { id: true, name: true, avatar: true } },
+            },
           },
           _count: { select: { tasks: true } },
         },
@@ -78,9 +82,13 @@ export async function GET(req: NextRequest) {
     ]);
 
     const projects = projectsFromDb.map((p) => {
-      const lead = p.members.length > 0 ? p.members[0].user : p.creator;
-      const { members, ...projectData } = p;
-      return { ...projectData, lead };
+      // Find the lead member from the full list
+      const leadMember = p.members.find((m) => m.role === "LEAD");
+      const lead = leadMember ? leadMember.user : p.creator;
+
+      // Return the original project data (which includes the full members array)
+      // and add the identified 'lead' property.
+      return { ...p, lead };
     });
 
     return NextResponse.json({
@@ -89,9 +97,11 @@ export async function GET(req: NextRequest) {
       page,
       totalPages: Math.ceil(totalProjects / limit),
     });
-
   } catch (error) {
     console.error("Failed to fetch projects:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

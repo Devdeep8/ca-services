@@ -62,15 +62,22 @@ import {
 } from "lucide-react";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
 import { DeleteProjectDialog } from "@/components/modals/DeleteProjectDialog";
-
+import {
+  AvatarGroup,
+  AvatarGroupTooltip,
+} from '@/components/ui/shadcn-io/avatar-group';
 // --- Types ---
 type ViewType = "grid" | "table";
 
 interface UserInfo {
+  id : string
+
   name: string | null;
   avatar: string | null;
 }
-
+type ProjectMember = {
+  user: UserInfo;
+};
 interface Project {
   id: string;
   name: string;
@@ -80,6 +87,7 @@ interface Project {
   department?: { id: string; name: string };
   client?: { id: string; name: string };
   internalProduct?: { id: string; name: string };
+  members: ProjectMember[];
   _count: {
     tasks : number
   }
@@ -128,6 +136,7 @@ export default function ProjectPage() {
     status === "authenticated" ? "/api/onboarding/check" : null,
     fetcher
   );
+
 
   const projectsApiUrl = useMemo(() => {
     if (!workspace) return null;
@@ -508,6 +517,12 @@ const ProjectCard = ({
   onDeleteClick: (project: Project) => void;
 }) => {
   const router = useRouter();
+  const getInitials = (name = "") =>
+  name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
   return (
     <Card className="hover:shadow-lg transition-shadow flex flex-col">
       <div
@@ -574,6 +589,20 @@ const ProjectCard = ({
             <span className="text-xs text-muted-foreground">
               Due: {new Date(project.dueDate).toLocaleDateString()}
             </span>
+            <span><AvatarGroup>
+              {project.members.map((member , index) => (
+            <Avatar className="w-8 h-8 cursor-pointer" key={index}>
+            <AvatarImage  src= {member.user.avatar || ""} alt={`${member.user.name}'s avatar`}/>
+            <AvatarFallback>
+              {getInitials(member.user?.name || "")}
+            </AvatarFallback>
+            <AvatarGroupTooltip>
+              <p>{member.user.name}</p>
+            </AvatarGroupTooltip>
+             </Avatar>
+              ))}
+              </AvatarGroup>
+              </span>
           </div>
         </CardContent>
       </div>

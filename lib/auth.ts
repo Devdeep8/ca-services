@@ -58,12 +58,16 @@ export const authOptions: NextAuthOptions = {
         token.sub = user.id;
         token.name = user.name;
         token.email = user.email;
+        token.avatar = user.avatar; // 'user' has the full user object from the DB
+
       }
       return token;
     },
     async session({ session, token } ) {
       if (token && session.user) {
         session.user.id = token.sub as string;
+        session.user.avatar = token.avatar as string | null; // Get the avatar from the token
+
       }
       return session;
     },
@@ -77,14 +81,26 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+// At the bottom of your auth file
+
 declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
-    } & NextAuthUser; // Extend the default user type
+      avatar: string | null; // <-- Add the avatar property
+    } & NextAuthUser; 
   }
 
-  // Extend the default User type to include properties from your Prisma model
+  // Extend the default User type from your Prisma model
+  interface User {
+    avatar?: string | null;
+  }
+}
 
+// Also update the JWT type
+declare module 'next-auth/jwt' {
+  interface JWT {
+    avatar?: string | null;
+  }
 }
 

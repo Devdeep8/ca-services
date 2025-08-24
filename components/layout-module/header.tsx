@@ -121,7 +121,7 @@ export function Header({ session }: { session: any }) {
           <DropdownMenuTrigger asChild>
             <Avatar className="h-9 w-9 cursor-pointer capitalize">
               <AvatarImage
-                src={user?.image}
+                src={user?.avatar || ""}
                 alt={user?.name || "@user"}
               />
               <AvatarFallback>{user?.name?.[0] ?? "U"}</AvatarFallback>
