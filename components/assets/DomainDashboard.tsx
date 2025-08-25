@@ -4,7 +4,8 @@
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import type { Asset } from "@prisma/client";
-import { RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { RefreshCw, Pencil } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 
 import {
@@ -18,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge } from "./StatusBadge";
+import { StatusBadge } from "./StatusBadge"; // Assuming you have this component
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -41,7 +42,7 @@ export default function AssetDashboard() {
   const handleRefresh = async (id: string) => {
     setCheckingId(id);
     try {
-      await fetch("/api/assets/check", {
+      await fetch(`/api/assets/check`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
@@ -93,7 +94,7 @@ export default function AssetDashboard() {
               <TableHead>Status</TableHead>
               <TableHead>Live</TableHead>
               <TableHead>Expires In</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -128,20 +129,28 @@ export default function AssetDashboard() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {asset.assetType === "DOMAIN" && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleRefresh(asset.id)}
-                          disabled={checkingId === asset.id}
-                        >
-                          <RefreshCw
-                            className={`h-4 w-4 ${
-                              checkingId === asset.id ? "animate-spin" : ""
-                            }`}
-                          />
-                        </Button>
-                      )}
+                       <div className="flex items-center justify-end space-x-2">
+                         {asset.assetType === "DOMAIN" && (
+                           <Button
+                             variant="outline"
+                             size="icon"
+                             onClick={() => handleRefresh(asset.id)}
+                             disabled={checkingId === asset.id}
+                             title="Refresh Live Status"
+                           >
+                             <RefreshCw
+                               className={`h-4 w-4 ${
+                                 checkingId === asset.id ? "animate-spin" : ""
+                               }`}
+                             />
+                           </Button>
+                         )}
+                         <Link href={`/assets/edit/${asset.id}`} passHref>
+                           <Button variant="outline" size="icon" title="Edit Asset">
+                             <Pencil className="h-4 w-4" />
+                           </Button>
+                         </Link>
+                       </div>
                     </TableCell>
                   </TableRow>
                 );

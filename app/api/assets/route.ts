@@ -207,7 +207,6 @@ export async function POST(request: Request) {
 
         // --- Provider & Billing ---
         provider: data.provider,
-        serviceId: data.serviceId || null,
         autoRenew: data.autoRenew,
         renewalPeriod: data.renewalPeriod,
 
@@ -222,7 +221,6 @@ export async function POST(request: Request) {
         password: data.password || null, // Should be encrypted in production
 
         // --- General Info ---
-        description: data.description || null,
         notes: data.notes || null,
       },
     });

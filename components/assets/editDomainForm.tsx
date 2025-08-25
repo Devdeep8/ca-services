@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
@@ -18,8 +18,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { z } from 'zod';
+import { toast } from 'sonner';
 
-const addAssetSchema = z.object({
+const editAssetSchema = z.object({
   assetType: z.enum(Object.values(AssetType) as [string, ...string[]]),
   provider: z.string().min(1, { message: 'Provider is required.' }),
   name: z.string().min(2, { message: 'Asset name is required.' }),
@@ -48,51 +49,97 @@ const addAssetSchema = z.object({
 });
 
 // Define the type based on the schema
-type AddAssetInput = z.infer<typeof addAssetSchema>;
+type EditAssetInput = z.infer<typeof editAssetSchema>;
 
-export default function NewAssetForm() {
+// Asset type for the existing asset data
+type AssetData = EditAssetInput & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+interface EditAssetFormProps {
+  asset: AssetData;
+  onCancel?: () => void;
+}
+
+export default function EditAssetForm({ asset }: any) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<AddAssetInput>({
-    resolver: zodResolver(addAssetSchema),
+  const form = useForm<EditAssetInput>({
+    resolver: zodResolver(editAssetSchema),
     defaultValues: {
-      assetType: AssetType.DOMAIN,
-      provider: 'TVMServer',
-      name: '',
-      domainName: '',
-      ipAddress: '',
-      hostingPlan: '',
-      serverLocation: '',
-      purchaseDate: undefined,
-      expiryDate: undefined,
-      autoRenew: false,
-      renewalPeriod: RenewalPeriod.YEARLY,
-      status: AssetStatus.ACTIVE,
-      liveStatus: LiveStatus.UNKNOWN,
-      controlPanelUrl: '',
-      username: '',
-      password: '',
-      notes: '',
+      assetType: asset.assetType,
+      provider: asset.provider || '',
+      name: asset.name || '',
+      domainName: asset.domainName || '',
+      ipAddress: asset.ipAddress || '',
+      hostingPlan: asset.hostingPlan || '',
+      serverLocation: asset.serverLocation || '',
+      purchaseDate: asset.purchaseDate,
+      expiryDate: asset.expiryDate,
+      autoRenew: asset.autoRenew || false,
+      renewalPeriod: asset.renewalPeriod,
+      status: asset.status,
+      liveStatus: asset.liveStatus,
+      controlPanelUrl: asset.controlPanelUrl || '',
+      username: asset.username || '',
+      password: asset.password || '',
+      notes: asset.notes || '',
     },
   });
 
-  async function onSubmit(values: AddAssetInput) {
+  // Reset form when asset changes
+  useEffect(() => {
+    form.reset({
+      assetType: asset.assetType,
+      provider: asset.provider || '',
+      name: asset.name || '',
+      domainName: asset.domainName || '',
+      ipAddress: asset.ipAddress || '',
+      hostingPlan: asset.hostingPlan || '',
+      serverLocation: asset.serverLocation || '',
+      purchaseDate: asset.purchaseDate,
+      expiryDate: asset.expiryDate,
+      autoRenew: asset.autoRenew || false,
+      renewalPeriod: asset.renewalPeriod,
+      status: asset.status,
+      liveStatus: asset.liveStatus,
+      controlPanelUrl: asset.controlPanelUrl || '',
+      username: asset.username || '',
+      password: asset.password || '',
+      notes: asset.notes || '',
+    });
+  }, [asset, form]);
+
+  async function onSubmit(values: EditAssetInput) {
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/assets', {
-        method: 'POST',
+      const res = await fetch(`/api/assets/${asset.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
 
-      if (!res.ok) throw new Error('Failed to create asset');
-      form.reset();
+      if (!res.ok){
+        toast.error('Failed to update asset.' , { duration: 5000 });
+      };
+      
+      const updatedAsset = await res.json();
+
+      toast.success('Asset updated successfully!');
+      
+      // Call the onSave callback if provided
+     
     } catch (error) {
-      console.error(error);
+      console.error('Error updating asset:', error);
+      // You might want to show a toast notification here
     } finally {
       setIsSubmitting(false);
     }
   }
+
+
 
   const assetType = form.watch('assetType');
 
@@ -156,8 +203,6 @@ export default function NewAssetForm() {
           />
         </div>
 
-        {/* Service ID & Description */}
-      
         {/* Technical Details - Conditional Fields */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Technical Details</h3>
@@ -464,11 +509,9 @@ export default function NewAssetForm() {
         </div>
 
         <div className="flex justify-end gap-2 pt-6 border-t">
-          <Button type="button" variant="ghost" onClick={() => form.reset()}>
-            Cancel
-          </Button>
+         
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating Asset...' : 'Create Asset'}
+            {isSubmitting ? 'Saving Changes...' : 'Save Changes'}
           </Button>
         </div>
       </form>

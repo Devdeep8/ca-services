@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     const asset = await db.asset.findUnique({ where: { id: id } });
     if (!asset || !asset.domainName) {
-      return NextResponse.json({ error: 'Asset not found or is not a domain' }, { status: 404 });
+      return NextResponse.json({ error: 'Asset not found or is not a domain' }, { status: 403 });
     }
 
     console.log('Checking live status for domain:', asset);

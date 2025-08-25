@@ -87,8 +87,6 @@ model Asset {
   assetType       AssetType
   provider        String        @default("TVMServer")
   name            String
-  serviceId       String?
-  description     String?       @db.Text
   domainName      String?
   ipAddress       String?
   hostingPlan     String?
