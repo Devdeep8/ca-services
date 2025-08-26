@@ -49,6 +49,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider,
+  SidebarRail,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -72,7 +73,12 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Types
 export interface NavigationItem {
@@ -136,6 +142,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
+  // Get the sidebar state from context
   const { state } = useSidebar();
 
   // Local state
@@ -213,80 +220,107 @@ export function AppSidebar({
     
     setOpenGroups(prev => new Set([...prev, ...newOpenGroups]));
   }, [pathname, navigationGroups]);
+  
 
   return (
     <>
-      <Sidebar 
-        variant={variant} 
-        side={side} 
+    <TooltipProvider delayDuration={0}>
+      <Sidebar
+        variant={variant}
+        side={side}
         collapsible={collapsible}
-        className={cn("border-r", className)}
+        // Use the state from the useSidebar hook to control the width
+        className={cn("border-r", state === "collapsed" && "w-14", className)}
       >
-        {/* Sidebar Header */}
+        {/* === SIDEBAR HEADER === */}
         <SidebarHeader className="border-b">
           {showWorkspaceSwitcher && (
             <div className="px-3 py-2">
-              <Popover open={isSwitcherOpen} onOpenChange={setIsSwitcherOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={isSwitcherOpen}
-                    className="w-full justify-between h-10"
-                    size="sm"
-                  >
-                    {currentWorkspace ? (
-                      <div className="flex items-center space-x-2 min-w-0">
-                        {currentWorkspace.avatar && (
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={currentWorkspace.avatar} />
-                            <AvatarFallback className="text-[10px]">
-                              {getInitials(currentWorkspace.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                        <span className="truncate text-sm">{currentWorkspace.name}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm">Select workspace...</span>
-                    )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search workspace..." className="h-9" />
-                    <CommandList>
-                      <CommandEmpty>No workspace found.</CommandEmpty>
-                      <CommandGroup>
-                        {workspaces.map((ws) => (
-                          <CommandItem
-                            key={ws.id}
-                            onSelect={() => handleSwitchWorkspace(ws.id)}
-                            className="flex items-center space-x-2"
-                          >
-                            <Check
-                              className={cn(
-                                "h-4 w-4",
-                                currentWorkspace?.id === ws.id
-                                  ? "opacity-100"
-                                  : "opacity-0"
+              {state === "collapsed" ? (
+                // --- COLLAPSED HEADER ---
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-10 w-10">
+                      {currentWorkspace?.avatar ? (
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={currentWorkspace.avatar} />
+                          <AvatarFallback className="text-[10px]">
+                            {getInitials(currentWorkspace.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <ChevronsUpDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {currentWorkspace?.name || "Select workspace"}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                // --- EXPANDED HEADER (Original Code) ---
+                <Popover open={isSwitcherOpen} onOpenChange={setIsSwitcherOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={isSwitcherOpen}
+                      className="w-full justify-between h-10"
+                      size="sm"
+                    >
+                      {currentWorkspace ? (
+                        <div className="flex items-center space-x-2 min-w-0">
+                          {currentWorkspace.avatar && (
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={currentWorkspace.avatar} />
+                              <AvatarFallback className="text-[10px]">
+                                {getInitials(currentWorkspace.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                          <span className="truncate text-sm">
+                            {currentWorkspace.name}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm">Select workspace...</span>
+                      )}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search workspace..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>No workspace found.</CommandEmpty>
+                        <CommandGroup>
+                          {workspaces.map((ws) => (
+                            <CommandItem
+                              key={ws.id}
+                              onSelect={() => handleSwitchWorkspace(ws.id)}
+                              className="flex items-center space-x-2"
+                            >
+                              <Check
+                                className={cn(
+                                  "h-4 w-4",
+                                  currentWorkspace?.id === ws.id
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {ws.avatar && (
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={ws.avatar} />
+                                  <AvatarFallback className="text-[10px]">
+                                    {getInitials(ws.name)}
+                                  </AvatarFallback>
+                                </Avatar>
                               )}
-                            />
-                            {ws.avatar && (
-                              <Avatar className="h-5 w-5">
-                                <AvatarImage src={ws.avatar} />
-                                <AvatarFallback className="text-[10px]">
-                                  {getInitials(ws.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                            )}
-                            <span className="flex-1">{ws.name}</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                      {/* {onWorkspaceAdd && (
-                        <>
+                              <span className="flex-1">{ws.name}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                        {onWorkspaceAdd && (
                           <CommandGroup>
                             <CommandItem
                               onSelect={() => {
@@ -298,21 +332,21 @@ export function AppSidebar({
                               <span>Add Workspace</span>
                             </CommandItem>
                           </CommandGroup>
-                        </>
-                      )} */}
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           )}
         </SidebarHeader>
 
-        {/* Sidebar Content */}
+        {/* === SIDEBAR CONTENT === */}
         <SidebarContent>
           {navigationGroups.map((group, groupIndex) => (
             <SidebarGroup key={groupIndex}>
-              {group.label && (
+              {group.label && state !== "collapsed" && (
                 <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
                   {group.label}
                 </SidebarGroupLabel>
@@ -321,21 +355,85 @@ export function AppSidebar({
                 <SidebarMenu>
                   {group.items.map((item) => {
                     const hasChildren = item.children && item.children.length > 0;
-                    const isActive = isActiveLink(item.href, item.children);
-                    const isOpen = openGroups.has(item.name);
+                    
+                    // --- COLLAPSED STATE LOGIC ---
+                    if (state === "collapsed") {
+                      if (hasChildren) {
+                        // RENDER POPOVER FOR ITEMS WITH CHILDREN
+                        return (
+                          <Popover key={item.name}>
+                            <PopoverTrigger asChild>
+                              <SidebarMenuItem>
+                                <SidebarMenuButton
+                                  isActive={isActiveLink(item.href, item.children)}
+                                  className="justify-center"
+                                >
+                                  <item.icon className="h-4 w-4" />
+                                  <span className="sr-only">{item.name}</span>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            </PopoverTrigger>
+                            <PopoverContent side="right" align="start" className="p-1 w-48">
+                              <div className="flex flex-col space-y-1">
+                                <p className="px-3 py-2 text-sm font-semibold">{item.name}</p>
+                                {item.children?.map((child) => (
+                                  <Link
+                                    key={child.name}
+                                    href={child.href}
+                                    className={cn(
+                                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-accent",
+                                      pathname === child.href && "bg-accent"
+                                    )}
+                                  >
+                                    <child.icon className="h-4 w-4" />
+                                    <span>{child.name}</span>
+                                  </Link>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        );
+                      } else {
+                        // RENDER TOOLTIP FOR ITEMS WITHOUT CHILDREN
+                        return (
+                          <Tooltip key={item.name}>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuItem>
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={pathname === item.href}
+                                  className="justify-center"
+                                >
+                                  <Link href={item.href}>
+                                    <item.icon className="h-4 w-4" />
+                                    <span className="sr-only">{item.name}</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p>{item.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      }
+                    }
 
+                    // --- EXPANDED STATE LOGIC (Your Original Code) ---
                     return (
                       <SidebarMenuItem key={item.name}>
                         {hasChildren ? (
-                          <Collapsible open={isOpen} onOpenChange={() => toggleGroup(item.name)}>
+                          <Collapsible
+                            open={openGroups.has(item.name)}
+                            onOpenChange={() => toggleGroup(item.name)}
+                          >
                             <div className="flex items-center">
-                              {/* Parent Link - Clickable */}
-                              <SidebarMenuButton 
-                                asChild 
-                                isActive={pathname === item.href}
+                              <SidebarMenuButton
+                                asChild
+                                isActive={isActiveLink(item.href, item.children) && !openGroups.has(item.name)}
                                 className="flex-1"
                               >
-                                <Link 
+                                <Link
                                   href={item.href}
                                   className="flex items-center gap-2 w-full"
                                 >
@@ -348,8 +446,6 @@ export function AppSidebar({
                                   )}
                                 </Link>
                               </SidebarMenuButton>
-                              
-                              {/* Collapsible Trigger */}
                               <CollapsibleTrigger asChild>
                                 <Button
                                   variant="ghost"
@@ -360,7 +456,7 @@ export function AppSidebar({
                                     toggleGroup(item.name);
                                   }}
                                 >
-                                  {isOpen ? (
+                                  {openGroups.has(item.name) ? (
                                     <ChevronDown className="h-3 w-3" />
                                   ) : (
                                     <ChevronRight className="h-3 w-3" />
@@ -377,7 +473,7 @@ export function AppSidebar({
                                       asChild
                                       isActive={pathname === child.href}
                                     >
-                                      <Link 
+                                      <Link
                                         href={child.href}
                                         className="flex items-center gap-2 w-full"
                                       >
@@ -396,11 +492,11 @@ export function AppSidebar({
                             </CollapsibleContent>
                           </Collapsible>
                         ) : (
-                          <SidebarMenuButton 
-                            asChild 
+                          <SidebarMenuButton
+                            asChild
                             isActive={pathname === item.href}
                           >
-                            <Link 
+                            <Link
                               href={item.href}
                               className="flex items-center gap-2 w-full"
                             >
@@ -422,107 +518,110 @@ export function AppSidebar({
             </SidebarGroup>
           ))}
         </SidebarContent>
-
-        {/* Sidebar Footer - User Section */}
+        
+        {/* === SIDEBAR FOOTER === */}
         {session?.user && (
           <SidebarFooter className="border-t">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton
-                      size="lg"
-                      className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                    >
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarImage
-                          src={session.user.image || ""}
-                          alt={session.user.name || "User"}
-                        />
-                        <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
-                          {getInitials(session.user.name || "")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">
-                          {session.user.name}
-                        </span>
-                        <span className="truncate text-xs text-muted-foreground">
-                          {session.user.email}
-                        </span>
-                      </div>
-                      <ChevronsUpDown className="ml-auto h-4 w-4" />
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-56"
-                    align="end"
-                    side={side === "left" ? "bottom" : "top"}
-                    sideOffset={4}
-                  >
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          {session.user.name}
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {session.user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => signOut({ callbackUrl: "/sign-in" })}
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sign Out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-            </SidebarMenu>
+            {state === "collapsed" ? (
+                // --- COLLAPSED FOOTER ---
+                 <div className="flex justify-center p-2">
+                   <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                       <Avatar className="h-8 w-8 cursor-pointer">
+                         <AvatarImage
+                           src={session.user.image || ""}
+                           alt={session.user.name || "User"}
+                         />
+                         <AvatarFallback>
+                           {getInitials(session.user.name || "")}
+                         </AvatarFallback>
+                       </Avatar>
+                     </DropdownMenuTrigger>
+                      <DropdownMenuContent side="right" align="start">
+                         <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">
+                              {session.user.name}
+                            </p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                              {session.user.email}
+                            </p>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => signOut({ callbackUrl: "/sign-in" })}
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Sign Out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                   </DropdownMenu>
+                 </div>
+            ) : (
+                // --- EXPANDED FOOTER (Original Code) ---
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                          size="lg"
+                          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                        >
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarImage
+                              src={session.user.avatar || ""}
+                              alt={session.user.name || "User"}
+                            />
+                            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
+                              {getInitials(session.user.name || "")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="grid flex-1 text-left text-sm leading-tight">
+                            <span className="truncate font-semibold">
+                              {session.user.name}
+                            </span>
+                            <span className="truncate text-xs text-muted-foreground">
+                              {session.user.email}
+                            </span>
+                          </div>
+                          <ChevronsUpDown className="ml-auto h-4 w-4" />
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-56"
+                        align="end"
+                      >
+                         <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">
+                              {session.user.name}
+                            </p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                              {session.user.email}
+                            </p>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => signOut({ callbackUrl: "/sign-in" })}
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Sign Out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+            )}
           </SidebarFooter>
         )}
+        <SidebarRail/>
       </Sidebar>
+    </TooltipProvider>
 
-      {/* Add Workspace Dialog */}
-      {/* <Dialog open={isAddWorkspaceOpen} onOpenChange={setIsAddWorkspaceOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Workspace</DialogTitle>
-            <DialogDescription>
-              Give your new workspace a name. You can change this later.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleAddWorkspace}>
-            <div className="grid gap-4 py-4">
-              <Input
-                id="name"
-                placeholder="e.g., Marketing Team"
-                value={newWorkspaceName}
-                onChange={(e) => setNewWorkspaceName(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddWorkspaceOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !newWorkspaceName.trim()}
-              >
-                {isSubmitting ? "Adding..." : "Add Workspace"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog> */}
     </>
   );
 }

@@ -132,16 +132,6 @@ export default function DashboardLayout({
               href: `/projects/user-work/${session?.user?.id}`,
               icon: FolderOpen,
             },
-            // {
-            //   name: "Assign to me",
-            //   href: "/projects/my-task",
-            //   icon: FolderOpen,
-            // },
-            // {
-            //   name: "Archived",
-            //   href: "/projects/archived",
-            //   icon: FolderOpen,
-            // },
           ],
         },
         {
@@ -161,28 +151,6 @@ export default function DashboardLayout({
             },
           ],
         },
-        // {
-        //   name: "Analytics",
-        //   href: "/analytics",
-        //   icon: BarChart3,
-        //   children: [
-        //     {
-        //       name: "Overview",
-        //       href: "/analytics/overview",
-        //       icon: BarChart3,
-        //     },
-        //     {
-        //       name: "Reports",
-        //       href: "/analytics/reports",
-        //       icon: FileText,
-        //     },
-        //     {
-        //       name: "Performance",
-        //       href: "/analytics/performance",
-        //       icon: BarChart3,
-        //     },
-        //   ],
-        // },
       ],
     },
     {
@@ -198,16 +166,6 @@ export default function DashboardLayout({
               href: "/assets",
               icon: Package,
             },
-            // {
-            //   name: "Images",
-            //   href: "/assets/images",
-            //   icon: Package,
-            // },
-            // {
-            //   name: "Documents",
-            //   href: "/assets/documents",
-            //   icon: FileText,
-            // },
           ],
         },
         {
@@ -235,11 +193,6 @@ export default function DashboardLayout({
               href: `/account/${session?.user?.id}/settings/security`,
               icon: Settings,
             },
-            // {
-            //   name: "Billing",
-            //   href: `/account/${session?.user?.id}/settings/billing`,
-            //   icon: Settings,
-            // },
           ],
         },
       ],
@@ -255,6 +208,7 @@ export default function DashboardLayout({
     >
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
+  
           {/* Sidebar */}
           <AppSidebar
             navigationGroups={navigationGroups}
@@ -266,13 +220,12 @@ export default function DashboardLayout({
             variant="sidebar"
             collapsible="icon"
           />
-          {/* <SidebarTrigger/> */}
-
-          {/* Main Content */}
-          <SidebarInset className="flex-1">
-            {/* Mobile Header */}
+          
+          <SidebarInset className="flex-1 flex flex-col">
+            {/* Mobile Header with SidebarTrigger */}
             <MobileHeader />
             <Header session={session}/>
+              <SidebarTrigger />
 
             {/* Page Content */}
             <main className="flex-1 p-4 lg:p-6">

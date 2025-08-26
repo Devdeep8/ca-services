@@ -315,7 +315,11 @@ export default function ProjectBoard({
         const response = await fetch("/api/tasks/update-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tasks: tasksToUpdate, column: finalStatus , projectId : projectId}),
+          body: JSON.stringify({
+            tasks: tasksToUpdate,
+            column: finalStatus,
+            projectId: projectId,
+          }),
         });
 
         if (!response.ok) {
@@ -329,7 +333,6 @@ export default function ProjectBoard({
         const result = await response.json();
       }
     } catch (error) {
-      
       toast.error(
         error instanceof Error
           ? error.message
@@ -355,8 +358,7 @@ export default function ProjectBoard({
   }
 
   return (
-     <ProjectContext.Provider value={contextValue}>
-
+    <ProjectContext.Provider value={contextValue}>
       <div className="p-4 md:p-6 h-full flex flex-col bg-background text-foreground">
         {/* ✨ 3. UPDATE THE HEADER TO DISPLAY THE STATUS */}
         <header className="flex items-center justify-between mb-4 pb-2 border-b">
@@ -404,7 +406,7 @@ export default function ProjectBoard({
             onDragOver={handleDragOver}
             collisionDetection={closestCorners}
           >
-            <main className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-6 overflow-x-auto">
+            <main className="flex-1 flex gap-6 p-4 overflow-x-auto">
               {BOARD_COLUMNS.map((col) => (
                 <KanbanColumn
                   key={col.status}
