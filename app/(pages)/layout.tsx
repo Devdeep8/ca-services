@@ -118,7 +118,7 @@ export default function DashboardLayout({
       label: "Workspace",
       items: [
         {
-          name: "Projects",
+          name: "Dashboard",
           href: "/projects",
           icon: FolderOpen,
           children: [
