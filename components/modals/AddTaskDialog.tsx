@@ -114,7 +114,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit }: TaskFormDialo
               <div className="space-y-4">
                 <FormField name="title" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title *</FormLabel>
+                    <FormLabel>Task Name *</FormLabel>
                     <FormControl><Input placeholder="e.g., Finalize Q4 budget report" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -123,7 +123,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit }: TaskFormDialo
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField name="projectId" control={form.control} render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project *</FormLabel>
+                      <FormLabel>Select a Project *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ''}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger></FormControl>
                         <SelectContent>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
@@ -137,7 +137,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit }: TaskFormDialo
                 
                 <FormField name="description" control={form.control} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Description (if not added no one will question you about it, it's good for you to add this)</FormLabel>
                     <FormControl><Textarea placeholder="Add extra details..." rows={3} {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,7 +146,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit }: TaskFormDialo
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField name="assigneeId" control={form.control} render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Assignee</FormLabel>
+                      <FormLabel>Who will do the task?</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProjectId}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select an assignee" /></SelectTrigger></FormControl>
                         <SelectContent>{(selectedProject => selectedProject ? selectedProject.members.map(m => <SelectItem key={m.user.id} value={m.user.id}>{m.user.name}</SelectItem>) : null)(projects.find(p => p.id === watchedProjectId))}</SelectContent>
@@ -157,7 +157,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit }: TaskFormDialo
 
                   <FormField name="reporterId" control={form.control} render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reporter *</FormLabel>
+                      <FormLabel>Who will review the task after completion? *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProjectId}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a reporter" /></SelectTrigger></FormControl>
                         <SelectContent>{(selectedProject => selectedProject ? selectedProject.members.map(m => <SelectItem key={m.user.id} value={m.user.id}>{m.user.name}</SelectItem>) : null)(projects.find(p => p.id === watchedProjectId))}</SelectContent>
@@ -170,7 +170,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit }: TaskFormDialo
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField name="priority" control={form.control} render={({ field }) => (
                        <FormItem>
-                        <FormLabel>Priority</FormLabel>
+                        <FormLabel>Priority of the task</FormLabel>
                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                            <SelectContent>
@@ -182,7 +182,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSubmit }: TaskFormDialo
                     
                     <FormField name="estimatedHours" control={form.control} render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Estimated Hours</FormLabel>
+                        <FormLabel>Rough time to complete this task (in hours)? *</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
