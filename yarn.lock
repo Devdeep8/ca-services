@@ -2869,6 +2869,29 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@supabase/auth-helpers-nextjs@npm:^0.10.0":
+  version: 0.10.0
+  resolution: "@supabase/auth-helpers-nextjs@npm:0.10.0"
+  dependencies:
+    "@supabase/auth-helpers-shared": 0.7.0
+    set-cookie-parser: ^2.6.0
+  peerDependencies:
+    "@supabase/supabase-js": ^2.39.8
+  checksum: 505decbe853d3b796209adcc593b15658ccefbcdc9eb76d324fdb2717cd6ccbbfa3ce79996aecf85dac7e25889a08b9e2c01e7c8711559989401fe0d684ed10d
+  languageName: node
+  linkType: hard
+
+"@supabase/auth-helpers-shared@npm:0.7.0":
+  version: 0.7.0
+  resolution: "@supabase/auth-helpers-shared@npm:0.7.0"
+  dependencies:
+    jose: ^4.14.4
+  peerDependencies:
+    "@supabase/supabase-js": ^2.39.8
+  checksum: 433697e2a93bf0d5e80e7c8ec8b3111353eb879cdd0c20122b13ffb038743dd34a77be3067d090a04621fb44da224582b026f1fd609d3567bd001f9013d1fb1f
+  languageName: node
+  linkType: hard
+
 "@supabase/auth-js@npm:2.71.1":
   version: 2.71.1
   resolution: "@supabase/auth-js@npm:2.71.1"
@@ -3642,7 +3665,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.7":
+"attr-accept@npm:^2.2.4":
+  version: 2.2.5
+  resolution: "attr-accept@npm:2.2.5"
+  checksum: e6a23183c112f5d313ebfc7e63e454de0600caffe9ab88f86e9df420d2399a48e27e6c46ee8de2fc6f34fee3541ecdb557f2b86e6d8bd7d24fd3a66cc75e6349
+  languageName: node
+  linkType: hard
+
+"axios@npm:^1.6.5, axios@npm:^1.6.7":
   version: 1.11.0
   resolution: "axios@npm:1.11.0"
   dependencies:
@@ -4906,6 +4936,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"file-selector@npm:^2.1.0":
+  version: 2.1.2
+  resolution: "file-selector@npm:2.1.2"
+  dependencies:
+    tslib: ^2.7.0
+  checksum: 0e7c5233ca7d33a05eb99236e8cfc843ea304335589d954393aeb7c5b7595f30be23c79173d28180e728b6eb441cd1dd355d6ad7fbb03b8e4f37d20e3d5c3184
+  languageName: node
+  linkType: hard
+
 "fill-range@npm:^7.1.1":
   version: 7.1.1
   resolution: "fill-range@npm:7.1.1"
@@ -4945,7 +4984,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"form-data@npm:^4.0.4":
+"form-data@npm:^4.0.0, form-data@npm:^4.0.4":
   version: 4.0.4
   resolution: "form-data@npm:4.0.4"
   dependencies:
@@ -5154,6 +5193,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hamming-distance@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "hamming-distance@npm:1.0.0"
+  checksum: 2cba2ec883d9ec9cd5877ff308af3ea2c87a9e131b81e0e00bf9b8525c1db46ad0be9a2c405223b417f6867ea8f8966cf687c8f07d1d7b496c6aeeb38f72e8ee
+  languageName: node
+  linkType: hard
+
 "handlebars@npm:^4.7.8":
   version: 4.7.8
   resolution: "handlebars@npm:4.7.8"
@@ -5269,6 +5315,27 @@ __metadata:
   dependencies:
     safer-buffer: ">= 2.1.2 < 3.0.0"
   checksum: 3f60d47a5c8fc3313317edfd29a00a692cc87a19cac0159e2ce711d0ebc9019064108323b5e493625e25594f11c6236647d8e256fbe7a58f4a3b33b89e6d30bf
+  languageName: node
+  linkType: hard
+
+"imagekit-javascript@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "imagekit-javascript@npm:4.0.1"
+  checksum: a0aa5da6694c33fe2e258b19bea984d9e273a9a23231bda76d948ebf6379bd92219053dd3f8fe0e5b1efdc981431527c31b1ad911d50103b52cbc90fccb726fc
+  languageName: node
+  linkType: hard
+
+"imagekit@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "imagekit@npm:6.0.0"
+  dependencies:
+    axios: ^1.6.5
+    form-data: ^4.0.0
+    hamming-distance: ^1.0.0
+    lodash: ^4.17.15
+    tslib: ^2.4.0
+    uuid: ^8.3.2
+  checksum: 7637b599c857c7b6e787efb5ff4f781b3d737aefb5e092fd882b30dd2b8bbcd2dd6e87cf8fbef6c46d64c765b2689ad843f5cbd2bfa38fbba296182b88bfd0f7
   languageName: node
   linkType: hard
 
@@ -6021,7 +6088,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:^4.15.5, jose@npm:^4.15.9":
+"jose@npm:^4.14.4, jose@npm:^4.15.5, jose@npm:^4.15.9":
   version: 4.15.9
   resolution: "jose@npm:4.15.9"
   checksum: 41abe1c99baa3cf8a78ebbf93da8f8e50e417b7a26754c4afa21865d87527b8ac2baf66de2c5f6accc3f7d7158658dae7364043677236ea1d07895b040097f15
@@ -6354,7 +6421,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.17.21":
+"lodash@npm:^4.17.15, lodash@npm:^4.17.21":
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: eb835a2e51d381e561e508ce932ea50a8e5a68f4ebdd771ea240d3048244a8d13658acbd502cd4829768c56f2e16bdd4340b9ea141297d472517b83868e677f7
@@ -6397,12 +6464,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:^0.536.0":
-  version: 0.536.0
-  resolution: "lucide-react@npm:0.536.0"
+"lucide-react@npm:^0.542.0":
+  version: 0.542.0
+  resolution: "lucide-react@npm:0.542.0"
   peerDependencies:
     react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 49324827a20507b43d9dfd5d4a7cba7aa8b4dd5b5230b6628d02dbdc3f495481f0601b0ff00ffe125cb62cfeb15da1ef7783884250430d4bc5b86741de522b8a
+  checksum: 779e426ef3473e6a56bbc627c945d8fb6fb98039ff6b731b66e60f1af5240aac5fcb16cae3a348ffc11f023a47e7f3f212ddc49e16548f2e47bd24e6f71c4ce4
   languageName: node
   linkType: hard
 
@@ -7263,6 +7330,7 @@ __metadata:
     "@radix-ui/react-toggle": ^1.1.9
     "@radix-ui/react-toggle-group": ^1.1.10
     "@radix-ui/react-tooltip": ^1.2.8
+    "@supabase/auth-helpers-nextjs": ^0.10.0
     "@supabase/supabase-js": ^2.56.0
     "@tailwindcss/postcss": ^4.0.0
     "@testing-library/dom": ^10.4.1
@@ -7288,12 +7356,14 @@ __metadata:
     embla-carousel-react: ^8.6.0
     framer-motion: ^12.23.12
     husky: ^9.1.7
+    imagekit: ^6.0.0
+    imagekit-javascript: ^4.0.1
     input-otp: ^1.4.2
     jest: ^29.7.0
     jest-environment-jsdom: ^30.0.5
     jest-util: ^30.0.5
     jsonwebtoken: ^9.0.2
-    lucide-react: ^0.536.0
+    lucide-react: ^0.542.0
     motion: ^12.23.12
     next: latest
     next-auth: ^4.24.11
@@ -7303,6 +7373,7 @@ __metadata:
     react: 19.1.0
     react-day-picker: latest
     react-dom: 19.1.0
+    react-dropzone: ^14.3.8
     react-hook-form: ^7.62.0
     react-resizable-panels: ^3.0.4
     recharts: ^2.15.4
@@ -7488,6 +7559,19 @@ __metadata:
   peerDependencies:
     react: ^19.1.0
   checksum: 1d154b6543467095ac269e61ca59db546f34ef76bcdeb90f2dad41d682cd210aae492e70c85010ed5d0a2caea225e9a55139ebc1a615ee85bf197d7f99678cdf
+  languageName: node
+  linkType: hard
+
+"react-dropzone@npm:^14.3.8":
+  version: 14.3.8
+  resolution: "react-dropzone@npm:14.3.8"
+  dependencies:
+    attr-accept: ^2.2.4
+    file-selector: ^2.1.0
+    prop-types: ^15.8.1
+  peerDependencies:
+    react: ">= 16.8 || 18.0.0"
+  checksum: c80ef459fe478f79aa48878f41404f43718602b2ade8416ff824914259cdd6ce1eb9ae8f02fa9769215c49ce98b8ab2c89cf6b0a00c0a7937aa3888471d67d98
   languageName: node
   linkType: hard
 
@@ -7815,6 +7899,13 @@ __metadata:
   version: 2.0.0
   resolution: "set-blocking@npm:2.0.0"
   checksum: 6e65a05f7cf7ebdf8b7c75b101e18c0b7e3dff4940d480efed8aad3a36a4005140b660fa1d804cb8bce911cac290441dc728084a30504d3516ac2ff7ad607b02
+  languageName: node
+  linkType: hard
+
+"set-cookie-parser@npm:^2.6.0":
+  version: 2.7.1
+  resolution: "set-cookie-parser@npm:2.7.1"
+  checksum: 2ef8b351094712f8f7df6d63ed4b10350b24a5b515772690e7dec227df85fcef5bc451c7765f484fd9f36694ece5438d1456407d017f237d0d3351d7dbbd3587
   languageName: node
   linkType: hard
 
@@ -8390,7 +8481,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.0.0, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.8.0":
+"tslib@npm:^2.0.0, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.7.0, tslib@npm:^2.8.0":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: e4aba30e632b8c8902b47587fd13345e2827fa639e7c3121074d5ee0880723282411a8838f830b55100cbe4517672f84a2472667d355b81e8af165a55dc6203a

@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const publicPaths = ['/sign-in', '/sign-up', '/']
+  const publicPaths = ['/sign-in', '/sign-up', '/' , '/forgot-password' , '/reset-password']
   const isPublicPath = publicPaths.includes(pathname)
 
   // If the user has a token and is on a public page, redirect to dashboard.

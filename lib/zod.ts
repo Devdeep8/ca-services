@@ -3,6 +3,13 @@
 import { z } from 'zod';
 import { Priority, TaskStatus } from '@/types'; // Use your actual path
 
+export const attachmentSchema = z.object({
+  filename: z.string(),
+  url: z.string().url(),
+  fileSize: z.number().optional(),
+  mimeType: z.string().optional(),
+});
+
 export const taskFormSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
   projectId: z.string({ message: "Please select a project." }).nonempty("Please select a project."),
@@ -18,6 +25,8 @@ export const taskFormSchema = z.object({
   // --- FIX: Use z.coerce.date() to handle string inputs ---
   startDate: z.coerce.date().optional().nullable(),
   dueDate: z.coerce.date().optional().nullable(),
+    attachments: z.array(attachmentSchema).optional(),
+
 }).refine((data) => {
     // This comparison now works correctly because the values have been coerced into Date objects.
     if (data.startDate && data.dueDate) {

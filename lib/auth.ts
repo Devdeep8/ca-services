@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
 
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   providers: [

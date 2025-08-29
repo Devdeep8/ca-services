@@ -433,7 +433,7 @@ const DepartmentStatsView = ({ stats }: { stats: DepartmentStats[] }) => (
           <TableHeader>
             <TableRow>
               <TableHead className="min-w-[140px]">Department</TableHead>
-              <TableHead className="text-center">Total Projects</TableHead>
+              <TableHead className="text-center">Total Task</TableHead>
               <TableHead className="text-center">Completed</TableHead>
               <TableHead className="text-center">Overdue</TableHead>
               <TableHead className="text-right min-w-[160px]">

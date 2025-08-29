@@ -93,16 +93,24 @@ import { ProjectCreationError } from "@/utils/errors"; // Import your custom err
  * @param userId - The ID of the authenticated user.
  * @throws {ProjectCreationError} if the user is not a member of the project.
  */
+// lib/services/task.service.ts
+
+/**
+ * Creates a new task and its associated attachments in a single transaction.
+ * @param data - Validated data, including an optional 'attachments' array.
+ * @param userId - The ID of the authenticated user.
+ */
 export async function createTask(data: TaskFormData, userId: string) {
-  
-  // Business Logic 1: Verify user membership
+  // 1. Separate the attachments from the rest of the task data
+  const { attachments, ...taskData } = data;
+
+  // 2. Business Logic: Verify user membership (remains the same)
   const projectMember = await db.projectMember.findUnique({
     where: {
-      projectId_userId: { projectId: data.projectId, userId: userId },
+      projectId_userId: { projectId: taskData.projectId, userId: userId },
     },
   });
 
-  // --- MODIFIED: Throw a specific error instead of a generic one ---
   if (!projectMember) {
     throw new ProjectCreationError(
       'You are not authorized to create tasks in this project.',
@@ -110,16 +118,41 @@ export async function createTask(data: TaskFormData, userId: string) {
     );
   }
 
-  // Business Logic 2: Calculate the new task's position
+  // 3. Database Operation: Use a transaction for atomicity
+  const newTask = await db.$transaction(async (tx) => {
+    // First, create the main task record
+    const createdTask = await tx.task.create({
+      data: {
+        ...taskData,
+        position: 0, // Your existing logic
+        actualHours: 0, // Your existing logic
+      },
+    });
 
-  // Database Operation: Create the task
-  const newTask = await db.task.create({
-    data: {
-      ...data,
-      position: 0,
-      actualHours: 0,
+    // Second, if attachments were provided, create them
+    if (attachments && attachments.length > 0) {
+      // Use createMany for efficiency
+      await tx.taskAttachment.createMany({
+        data: attachments.map((att) => ({
+          ...att, // Spread the attachment metadata (url, filename, etc.)
+          taskId: createdTask.id, // Link to the task we just created
+          userId: userId,         // Link to the user who uploaded
+        })),
+      });
+    }
+
+    // The transaction returns the created task
+    return createdTask;
+  });
+
+  // To return the task with its attachments, you might need a subsequent query
+  // This is optional, depending on what your frontend needs immediately after creation
+  const taskWithAttachments = await db.task.findUnique({
+    where: { id: newTask.id },
+    include: {
+      attachments: true, // Include the newly created attachments in the response
     },
   });
 
-  return newTask;
+  return taskWithAttachments;
 }
