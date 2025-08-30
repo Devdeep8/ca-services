@@ -10,7 +10,12 @@ import { cn } from "@/lib/utils";
 
 // Your types and schemas
 import { Project, User, Priority, TaskStatus } from "@/types";
-import { taskFormSchema, TaskFormData, TaskFormInput , attachmentSchema } from "@/lib/zod";
+import {
+  taskFormSchema,
+  TaskFormData,
+  TaskFormInput,
+  attachmentSchema,
+} from "@/lib/zod";
 
 // Shadcn UI Components
 import { Button } from "@/components/ui/button";
@@ -49,7 +54,7 @@ import {
   Dropzone,
   DropzoneContent,
   DropzoneEmptyState,
-} from '@/components/ui/shadcn-io/dropzone';
+} from "@/components/ui/shadcn-io/dropzone";
 import { toast } from "sonner";
 import z from "zod";
 // --- Props Interface ---
@@ -75,8 +80,7 @@ export function TaskFormDialog({
   onSubmit,
 }: TaskFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-    const [files, setFiles] = useState<File[]>([]);
-
+  const [files, setFiles] = useState<File[]>([]);
 
   // Fetches data only when the dialog is open
   const {
@@ -131,7 +135,7 @@ export function TaskFormDialog({
     }
   }, [watchedProjectId, projects, currentUser, form, formContextData]);
 
-const handleFormSubmit = async (data: TaskFormInput) => {
+  const handleFormSubmit = async (data: TaskFormInput) => {
     setIsSubmitting(true);
     try {
       let attachmentsData: z.infer<typeof attachmentSchema>[] = [];
@@ -142,11 +146,11 @@ const handleFormSubmit = async (data: TaskFormInput) => {
 
         const uploadPromises = files.map(async (file) => {
           const formData = new FormData();
-          formData.append('file', file);
+          formData.append("file", file);
 
           // Call your new upload API route
-          const response = await fetch('/api/upload', {
-            method: 'POST',
+          const response = await fetch("/api/upload", {
+            method: "POST",
             body: formData,
             // Note: Do NOT set the 'Content-Type' header yourself.
             // The browser will automatically set it correctly for FormData.
@@ -154,7 +158,9 @@ const handleFormSubmit = async (data: TaskFormInput) => {
 
           if (!response.ok) {
             const errorBody = await response.json();
-            throw new Error(errorBody.message || `Failed to upload ${file.name}`);
+            throw new Error(
+              errorBody.message || `Failed to upload ${file.name}`
+            );
           }
 
           const result = await response.json(); // Expects { url: '...' }
@@ -169,7 +175,7 @@ const handleFormSubmit = async (data: TaskFormInput) => {
         });
 
         attachmentsData = await Promise.all(uploadPromises);
-        toast.success('Uploads complete!');
+        toast.success("Uploads complete!");
       }
 
       // --- 2. COMBINE FORM DATA AND ATTACHMENT DATA ---
@@ -187,27 +193,26 @@ const handleFormSubmit = async (data: TaskFormInput) => {
       onOpenChange(false);
     } catch (error) {
       console.error("Submission failed:", error);
-      toast.error(error instanceof Error ? error.message : 'An error occurred.');
+      toast.error(
+        error instanceof Error ? error.message : "An error occurred."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl ">
         <DialogHeader>
           <DialogTitle>Add New Task</DialogTitle>
         </DialogHeader>
-
         {isLoading && <FormSkeleton />}
         {error && (
           <div className="p-4 text-center text-red-500">
             Failed to load form data. Please try again.
           </div>
         )}
-
         {!isLoading && !error && formContextData && (
           <Form {...form}>
             <form
@@ -215,24 +220,23 @@ const handleFormSubmit = async (data: TaskFormInput) => {
               className="space-y-4"
             >
               <div className="space-y-4">
-                <FormField
-                  name="title"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Task Name *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., Finalize Q4 budget report"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    name="title"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Task Name *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Finalize Q4 budget report"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     name="projectId"
                     control={form.control}
@@ -261,35 +265,13 @@ const handleFormSubmit = async (data: TaskFormInput) => {
                     )}
                   />
                 </div>
-
-                <FormField
-                  name="description"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Description (if not added no one will question you about
-                        it, it's good for you to add this)
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Add extra details..."
-                          rows={3}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     name="assigneeId"
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Who will do the task?</FormLabel>
+                        <FormLabel>Assign To?</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value || ""}
@@ -320,15 +302,12 @@ const handleFormSubmit = async (data: TaskFormInput) => {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     name="reporterId"
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          Who will review the task after completion? *
-                        </FormLabel>
+                        <FormLabel>Reviewer*</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value || ""}
@@ -359,9 +338,6 @@ const handleFormSubmit = async (data: TaskFormInput) => {
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     name="priority"
                     control={form.control}
@@ -388,15 +364,14 @@ const handleFormSubmit = async (data: TaskFormInput) => {
                       </FormItem>
                     )}
                   />
-
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     name="estimatedHours"
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          Rough time to complete this task (in hours)? *
-                        </FormLabel>
+                        <FormLabel>Time Estimate (in hours)*</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -416,19 +391,6 @@ const handleFormSubmit = async (data: TaskFormInput) => {
                       </FormItem>
                     )}
                   />
-                </div>
-                 <Dropzone
-              src={files}
-              onDrop={(acceptedFiles) => setFiles(acceptedFiles)}
-              maxFiles={5} // Example: Allow up to 5 files
-              maxSize={5 * 1024 * 1024} // Example: 5MB per file
-              onError={(err) => toast.error(err.message)}
-            >
-              <DropzoneContent />
-              <DropzoneEmptyState />
-            </Dropzone>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     name="startDate"
                     control={form.control}
@@ -510,6 +472,37 @@ const handleFormSubmit = async (data: TaskFormInput) => {
                     )}
                   />
                 </div>
+                <FormField
+                  name="description"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Description (if not added no one will question you about
+                        it, it's good for you to add this)
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Add extra details..."
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Dropzone
+                  src={files}
+                  onDrop={(acceptedFiles) => setFiles(acceptedFiles)}
+                  maxFiles={5} // Example: Allow up to 5 files
+                  maxSize={5 * 1024 * 1024} // Example: 5MB per file
+                  onError={(err) => toast.error(err.message)}
+                >
+                  <DropzoneContent />
+                  <DropzoneEmptyState />
+                </Dropzone>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
               </div>
               <DialogFooter className="pt-4">
                 <Button
@@ -533,7 +526,6 @@ const handleFormSubmit = async (data: TaskFormInput) => {
     </Dialog>
   );
 }
-
 // --- Skeleton Loader Component ---
 const FormSkeleton = () => (
   <div className="space-y-4 p-4">
