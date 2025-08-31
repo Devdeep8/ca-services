@@ -180,17 +180,17 @@ export default function DashboardLayout({
       items: [
         {
           name: "Settings",
-          href: `/account/${session?.user?.id}/settings`,
+          href: `/account/${session?.user?.id}`,
           icon: Settings,
           children: [
             {
-              name: "Profile",
-              href: `/account/${session?.user?.id}/settings/profile`,
+              name: "My Projects",
+              href: `/account/${session?.user?.id}/`,
               icon: Settings,
             },
             {
               name: "Security",
-              href: `/account/${session?.user?.id}/settings/security`,
+              href: `/account/${session?.user?.id}/security`,
               icon: Settings,
             },
           ],

@@ -20,11 +20,23 @@ export const UpdateProfileSchema = z.object({
 // 👇 Add this new schema for the change password form
 export const ChangePasswordSchema = z.object({
     currentPassword: z.string().min(1, { message: "Current password is required." }),
-    newPassword: z.string().min(8, { message: "New password must be at least 8 characters long." }),
-    confirmPassword: z.string()
-  })
-  // Use .refine() to validate that the two new password fields match
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"], // Point the error to the confirmation field
-  });
+  newPassword: z.string()
+    .min(8, { message: "Must be at least 8 characters long." })
+    .regex(/[A-Z]/, { message: "Must contain at least one uppercase letter." })
+    .regex(/[a-z]/, { message: "Must contain at least one lowercase letter." })
+    .regex(/[0-9]/, { message: "Must contain at least one number." })
+    .regex(/[^A-Za-z0-9]/, { message: "Must contain at least one special character." }),
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match.",
+  path: ["confirmPassword"], // Error will be shown on the confirmPassword field
+});
+
+// We can also export the rules for use in the UI
+export const passwordRules = [
+  "Must be at least 8 characters long.",
+  "Must contain at least one uppercase letter.",
+  "Must contain at least one lowercase letter.",
+  "Must contain at least one number.",
+  "Must contain at least one special character.",
+];

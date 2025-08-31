@@ -1,12 +1,23 @@
-import { notFound } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Briefcase } from 'lucide-react';
-import { db } from '@/lib/db';
-export default async function ProfilePage({ params }: { params: Promise<{ profileId: string }> }) {
-  const {profileId} = await params;
+import { notFound } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Briefcase } from "lucide-react";
+import { db } from "@/lib/db";
+import CopyProjectLinkButton from "@/components/profile-module/copy-project-link-button";
+export default async function ProfilePage({
+  params,
+}: {
+  params: Promise<{ profileId: string }>;
+}) {
+  const { profileId } = await params;
   const user = await db.user.findUnique({
-    where: { id:profileId },
+    where: { id: profileId },
     include: {
       projectMemberships: {
         include: {
@@ -14,7 +25,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ profil
         },
         orderBy: {
           project: {
-            updatedAt: 'desc',
+            updatedAt: "desc",
           },
         },
       },
@@ -61,15 +72,25 @@ export default async function ProfilePage({ params }: { params: Promise<{ profil
           <ul className="space-y-4">
             {user.projectMemberships.length > 0 ? (
               user.projectMemberships.map(({ project, role }) => (
-                <li key={project.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <li
+                  key={project.id}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <Briefcase className="h-5 w-5 text-primary" />
                     <div>
                       <p className="font-semibold">{project.name}</p>
-                      <p className="text-sm text-muted-foreground">{project.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {project.description}
+                      </p>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                  <CopyProjectLinkButton projectId={project.id} />
                   <Badge>{role}</Badge>
+
+                  </div>
+
                 </li>
               ))
             ) : (
