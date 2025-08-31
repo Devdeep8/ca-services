@@ -7,7 +7,8 @@ import useSWR, { useSWRConfig } from "swr";
 import { useDebounce } from "use-debounce";
 import axios from "axios";
 import { toast } from "sonner";
-
+import { ProjectCard } from "@/components/profile-module/project-card";
+import { ProjectTable } from "@/components/profile-module/project-table";
 // UI Components
 import {
   Card,
@@ -47,7 +48,6 @@ import { Progress } from "@/components/ui/progress";
 
 // Icons
 import {
-  MoreHorizontal,
   Pencil,
   Briefcase,
   FolderKanban,
@@ -62,10 +62,7 @@ import {
 } from "lucide-react";
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
 import { DeleteProjectDialog } from "@/components/modals/DeleteProjectDialog";
-import {
-  AvatarGroup,
-  AvatarGroupTooltip,
-} from '@/components/ui/shadcn-io/avatar-group';
+
 // --- Types ---
 type ViewType = "grid" | "table";
 
@@ -78,7 +75,7 @@ interface UserInfo {
 type ProjectMember = {
   user: UserInfo;
 };
-interface Project {
+ interface Project {
   id: string;
   name: string;
   dueDate: string | number | Date;
@@ -505,263 +502,158 @@ const ProjectGrid = ({
   </div>
 );
 
-const ProjectCard = ({
-  project,
-  workspaceId,
-  session,
-  onDeleteClick,
-}: {
-  project: Project;
-  workspaceId: string;
-  session: any;
-  onDeleteClick: (project: Project) => void;
-}) => {
-  const router = useRouter();
-  const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
-  return (
-    <Card className="hover:shadow-lg transition-shadow flex flex-col">
-      <div
-        className="cursor-pointer flex-grow"
-        onClick={() =>
-          router.push(`/projects/${project.id}?workspaceId=${workspaceId}`)
-        }
-      >
-        <CardHeader className="pb-4">
-          <div className="flex items-start justify-between gap-2">
-            <CardTitle className="flex items-center gap-3">
-              <Briefcase className="h-6 w-6 text-primary" />
-              <span className="font-semibold">{project.name}</span>
-            </CardTitle>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => e.stopPropagation()}
-                  className="h-8 w-8 flex-shrink-0"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DropdownMenuItem
-                  onClick={() => router.push(`/projects/${project.id}/edit`)}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onDeleteClick(project)}
-                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                >
-                  <Delete className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <CardDescription>
-            {project.department
-              ? `Dept: ${project.department.name}`
-              : "No department"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow flex flex-col justify-end gap-4">
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <span className="font-semibold">Lead:</span>
-            <UserAvatar user={project.lead} />
-            <span>{project.lead?.name || "N/A"}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <Badge
-              variant={project.status === "ACTIVE" ? "success" : "secondary"}
-            >
-              {project.status}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              Due: {new Date(project.dueDate).toLocaleDateString()}
-            </span>
-            <span><AvatarGroup>
-              {project.members.map((member , index) => (
-            <Avatar className="w-8 h-8 cursor-pointer" key={index}>
-            <AvatarImage  src= {member.user.avatar || ""} alt={`${member.user.name}'s avatar`}/>
-            <AvatarFallback>
-              {getInitials(member.user?.name || "")}
-            </AvatarFallback>
-            <AvatarGroupTooltip>
-              <p>{member.user.name}</p>
-            </AvatarGroupTooltip>
-             </Avatar>
-              ))}
-              </AvatarGroup>
-              </span>
-          </div>
-        </CardContent>
-      </div>
-    </Card>
-  );
-};
+// const ProjectTable = ({
+//   projects,
+//   workspaceId,
+//   onDeleteClick,
+// }: {
+//   projects: Project[];
+//   workspaceId: string;
+//   onDeleteClick: (project: Project) => void;
+// }) => {
+//   const router = useRouter();
 
-const ProjectTable = ({
-  projects,
-  workspaceId,
-  onDeleteClick,
-}: {
-  projects: Project[];
-  workspaceId: string;
-  onDeleteClick: (project: Project) => void;
-}) => {
-  const router = useRouter();
-
-  return (
-    <Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead className="hidden md:table-cell">Task No</TableHead>
-            <TableHead className="hidden md:table-cell">Client Name</TableHead>
-            <TableHead className="hidden md:table-cell">Department</TableHead>
-            <TableHead>Lead</TableHead>
-            <TableHead className="hidden lg:table-cell">Due Date</TableHead>
-            <TableHead className="text-right">Status</TableHead>
-            <TableHead className="text-center">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {projects.map((project) => (
-            <TableRow key={project.id}>
-              <TableCell
-                onClick={() =>
-                  router.push(
-                    `/projects/${project.id}?workspaceId=${workspaceId}`
-                  )
-                }
-                className="font-medium cursor-pointer hover:underline"
-              >
-                {project.name}
-              </TableCell>
-              <TableCell
-                onClick={() =>
-                  router.push(
-                    `/projects/${project.id}?workspaceId=${workspaceId}`
-                  )
-                }
-                className="font-medium cursor-pointer hover:underline"
-              >
-                {project._count.tasks}
-              </TableCell>
-              <TableCell
-                onClick={() =>
-                  router.push(
-                    `/projects/${project.id}?workspaceId=${workspaceId}`
-                  )
-                }
-                className="font-medium cursor-pointer hover:underline"
-              >
-                {project.internalProduct?.name || project.client?.name || "N/A"}
-              </TableCell>
-              <TableCell
-                onClick={() =>
-                  router.push(
-                    `/projects/${project.id}?workspaceId=${workspaceId}`
-                  )
-                }
-                className="hidden md:table-cell cursor-pointer"
-              >
-                {project.department?.name || "N/A"}
-              </TableCell>
-              <TableCell
-                onClick={() =>
-                  router.push(
-                    `/projects/${project.id}?workspaceId=${workspaceId}`
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <div className="flex items-center space-x-2">
-                  <UserAvatar user={project.lead} />
-                  <span className="font-medium">
-                    {project.lead?.name || "N/A"}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell
-                onClick={() =>
-                  router.push(
-                    `/projects/${project.id}?workspaceId=${workspaceId}`
-                  )
-                }
-                className="hidden lg:table-cell text-muted-foreground cursor-pointer"
-              >
-                {new Date(project.dueDate).toLocaleDateString()}
-              </TableCell>
-              <TableCell
-                onClick={() =>
-                  router.push(
-                    `/projects/${project.id}?workspaceId=${workspaceId}`
-                  )
-                }
-                className="text-right cursor-pointer"
-              >
-                <Badge
-                  variant={
-                    project.status === "ACTIVE" ? "success" : "secondary"
-                  }
-                >
-                  {project.status}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => e.stopPropagation()}
-                      className="h-8 w-8"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">Open project menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <DropdownMenuItem
-                      onClick={() =>
-                        router.push(`/projects/${project.id}/edit`)
-                      }
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      <span>Edit</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onDeleteClick(project)}
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                    >
-                      <Delete className="mr-2 h-4 w-4" />
-                      <span>Delete</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
-  );
-};
+//   return (
+//     <Card>
+//       <Table>
+//         <TableHeader>
+//           <TableRow>
+//             <TableHead>Name</TableHead>
+//             <TableHead className="hidden md:table-cell">Task No</TableHead>
+//             <TableHead className="hidden md:table-cell">Client Name</TableHead>
+//             <TableHead className="hidden md:table-cell">Department</TableHead>
+//             <TableHead>Lead</TableHead>
+//             <TableHead className="hidden lg:table-cell">Due Date</TableHead>
+//             <TableHead className="text-right">Status</TableHead>
+//             <TableHead className="text-center">Actions</TableHead>
+//           </TableRow>
+//         </TableHeader>
+//         <TableBody>
+//           {projects.map((project) => (
+//             <TableRow key={project.id}>
+//               <TableCell
+//                 onClick={() =>
+//                   router.push(
+//                     `/projects/${project.id}?workspaceId=${workspaceId}`
+//                   )
+//                 }
+//                 className="font-medium cursor-pointer hover:underline"
+//               >
+//                 {project.name}
+//               </TableCell>
+//               <TableCell
+//                 onClick={() =>
+//                   router.push(
+//                     `/projects/${project.id}?workspaceId=${workspaceId}`
+//                   )
+//                 }
+//                 className="font-medium cursor-pointer hover:underline"
+//               >
+//                 {project._count.tasks}
+//               </TableCell>
+//               <TableCell
+//                 onClick={() =>
+//                   router.push(
+//                     `/projects/${project.id}?workspaceId=${workspaceId}`
+//                   )
+//                 }
+//                 className="font-medium cursor-pointer hover:underline"
+//               >
+//                 {project.internalProduct?.name || project.client?.name || "N/A"}
+//               </TableCell>
+//               <TableCell
+//                 onClick={() =>
+//                   router.push(
+//                     `/projects/${project.id}?workspaceId=${workspaceId}`
+//                   )
+//                 }
+//                 className="hidden md:table-cell cursor-pointer"
+//               >
+//                 {project.department?.name || "N/A"}
+//               </TableCell>
+//               <TableCell
+//                 onClick={() =>
+//                   router.push(
+//                     `/projects/${project.id}?workspaceId=${workspaceId}`
+//                   )
+//                 }
+//                 className="cursor-pointer"
+//               >
+//                 <div className="flex items-center space-x-2">
+//                   <UserAvatar user={project.lead} />
+//                   <span className="font-medium">
+//                     {project.lead?.name || "N/A"}
+//                   </span>
+//                 </div>
+//               </TableCell>
+//               <TableCell
+//                 onClick={() =>
+//                   router.push(
+//                     `/projects/${project.id}?workspaceId=${workspaceId}`
+//                   )
+//                 }
+//                 className="hidden lg:table-cell text-muted-foreground cursor-pointer"
+//               >
+//                 {new Date(project.dueDate).toLocaleDateString()}
+//               </TableCell>
+//               <TableCell
+//                 onClick={() =>
+//                   router.push(
+//                     `/projects/${project.id}?workspaceId=${workspaceId}`
+//                   )
+//                 }
+//                 className="text-right cursor-pointer"
+//               >
+//                 <Badge
+//                   variant={
+//                     project.status === "ACTIVE" ? "success" : "secondary"
+//                   }
+//                 >
+//                   {project.status}
+//                 </Badge>
+//               </TableCell>
+//               <TableCell className="text-center">
+//                 <DropdownMenu>
+//                   <DropdownMenuTrigger asChild>
+//                     <Button
+//                       variant="ghost"
+//                       size="icon"
+//                       onClick={(e) => e.stopPropagation()}
+//                       className="h-8 w-8"
+//                     >
+//                       <MoreVertical className="h-4 w-4" />
+//                       <span className="sr-only">Open project menu</span>
+//                     </Button>
+//                   </DropdownMenuTrigger>
+//                   <DropdownMenuContent
+//                     align="end"
+//                     onClick={(e) => e.stopPropagation()}
+//                   >
+//                     <DropdownMenuItem
+//                       onClick={() =>
+//                         router.push(`/projects/${project.id}/edit`)
+//                       }
+//                     >
+//                       <Pencil className="mr-2 h-4 w-4" />
+//                       <span>Edit</span>
+//                     </DropdownMenuItem>
+//                     <DropdownMenuItem
+//                       onClick={() => onDeleteClick(project)}
+//                       className="text-red-600 focus:text-red-600 focus:bg-red-50"
+//                     >
+//                       <Delete className="mr-2 h-4 w-4" />
+//                       <span>Delete</span>
+//                     </DropdownMenuItem>
+//                   </DropdownMenuContent>
+//                 </DropdownMenu>
+//               </TableCell>
+//             </TableRow>
+//           ))}
+//         </TableBody>
+//       </Table>
+//     </Card>
+//   );
+// };
 
 const UserAvatar = ({ user }: { user: UserInfo | null }) => {
   const initials =

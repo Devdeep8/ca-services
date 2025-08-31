@@ -6,6 +6,7 @@ export async function getProjectForEdit(projectId: string) {
     where: { id: projectId },
     include: {
       department: true,
+      internalProduct: true,
       members: {
         include: { user: true },
       },
@@ -34,6 +35,31 @@ export async function getAllDepartments() {
     select: {
       id: true,
       name: true,
+    },
+  });
+}
+
+
+export async function getAllInternalClient() {
+   return await db.internalProduct.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+  
+}
+
+
+export async function getAllExternalClient() {
+  return await db.user.findMany({
+    where: {
+      userType: "CLIENT"
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
     },
   });
 }

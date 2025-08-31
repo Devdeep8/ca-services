@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { Prisma, ProjectRole } from "@prisma/client";
+import { ProjectStatus, Priority, ProjectType } from '@prisma/client';
 import { hasUserRole } from "@/services/role-services/has-user-role.service";
 
 /**
@@ -9,25 +10,43 @@ import { hasUserRole } from "@/services/role-services/has-user-role.service";
  * This now matches the updated Prisma schema.
  */
 const updateProjectSchema = z.object({
+  // --- Scalar Fields ---
   name: z.string().min(3, "Name must be at least 3 characters").optional(),
   description: z.string().optional().nullable(),
-  status: z.enum(["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"]).optional(),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
+  status: z.nativeEnum(ProjectStatus).optional(),
+  priority: z.nativeEnum(Priority).optional(),
+  projectType: z.nativeEnum(ProjectType).optional(), // New
+  isClientProject: z.boolean().optional(), // New
+  zohoFolderLink: z.string().url("Must be a valid URL").nullable().optional(), // New
   startDate: z.coerce.date().optional().nullable(),
   dueDate: z.coerce.date().optional().nullable(),
+
+  // --- Relational ID Fields ---
   createdBy: z.string().cuid("Invalid creator ID").optional(),
   departmentId: z.string().cuid("Invalid department ID").nullable().optional(),
+  clientId: z.string().cuid("Invalid client ID").nullable().optional(), // New
+  internalProductId: z.string().cuid("Invalid product ID").nullable().optional(), // New
 
-  members: z
-    .array(
-      z.object({
-        userId: z.string().cuid(),
-        role: z.nativeEnum(ProjectRole),
-      })
-    )
-    .optional(),
+  // --- Many-to-Many Relation ---
+  members: z.array(
+    z.object({
+      userId: z.string().cuid(),
+      role: z.nativeEnum(ProjectRole),
+    })
+  ).optional(),
+})
+.refine(data => {
+    // If isClientProject is explicitly being set to true, a clientId must also be provided.
+    if (data.isClientProject === true && data.clientId === undefined) {
+      // This validation only triggers if `isClientProject` is in the payload.
+      // We need to ensure we don't block unsetting a client.
+      return false;
+    }
+    return true;
+}, {
+    message: "A client must be selected when marking this as a client project.",
+    path: ["clientId"],
 });
-
 /**
  * Handles GET requests to fetch a single project by its ID.
  */
@@ -89,7 +108,7 @@ export async function PATCH(
     );
   }
 
-  const { members, createdBy, departmentId, ...scalarProjectData } =
+  const { members, createdBy, departmentId, internalProductId, ...scalarProjectData } =
     validation.data;
 
   try {
@@ -168,6 +187,38 @@ export async function PATCH(
         updatePayload.department = { connect: { id: departmentId } };
       }
     }
+
+    if (
+      internalProductId !== undefined &&
+      internalProductId !== existingProject.internalProductId
+    ) {
+      if (internalProductId === null) {
+        // If the form sends null, disconnect the internalProduct
+        updatePayload.internalProduct = { disconnect: true };
+      } else {
+        // Otherwise, connect to the new internalProduct
+        updatePayload.internalProduct = { connect: { id: internalProductId } };
+      }
+    }
+    if (
+      scalarProjectData.zohoFolderLink !== undefined &&
+      scalarProjectData.zohoFolderLink !== existingProject.zohoFolderLink
+    ) {
+      updatePayload.zohoFolderLink = scalarProjectData.zohoFolderLink;
+    }
+    if (
+      scalarProjectData.projectType !== undefined &&
+      scalarProjectData.projectType !== existingProject.projectType
+    ) {
+      updatePayload.projectType = scalarProjectData.projectType;
+    }
+    if (
+      scalarProjectData.isClientProject !== undefined &&
+      scalarProjectData.isClientProject !== existingProject.isClientProject
+    ) {
+      updatePayload.isClientProject = scalarProjectData.isClientProject;
+    }
+    
 
     // Update the project (no members yet)
     const updatedProject = await db.project.update({
