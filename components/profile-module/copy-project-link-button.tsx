@@ -12,12 +12,12 @@ import {
 import { toast } from "sonner";
 
 // This component only needs the projectId to function
-export default function CopyProjectLinkButton({ projectId }: { projectId: string }) {
+export default function CopyProjectLinkButton({ projectId , workspaceId }: { projectId: string , workspaceId : string}) {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
     // window.location.origin is safe to use here because this is a Client Component
-    const projectUrl = `${window.location.origin}/projects/${projectId}`;
+    const projectUrl = `${window.location.origin}/projects/${projectId}?workspaceId=${workspaceId}`;
     
     navigator.clipboard.writeText(projectUrl).then(() => {
       toast.success("Project link copied to clipboard!");

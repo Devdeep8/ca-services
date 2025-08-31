@@ -93,7 +93,7 @@ export function Header({ session }: { session: any }) {
   if (!user) return null; // Or render a login button
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between h-16 px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+    <header className="sticky top-0 z-50 flex items-center justify-between h-[4.54rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm">
       {/* Left Section: Logo and App Name */}
       <div className="flex items-center gap-4">
         <Link href="/" className="flex items-center gap-2">

@@ -86,7 +86,7 @@ export default async function ProfilePage({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                  <CopyProjectLinkButton projectId={project.id} />
+                  <CopyProjectLinkButton projectId={project.id} workspaceId={project.workspaceId} />
                   <Badge>{role}</Badge>
 
                   </div>
