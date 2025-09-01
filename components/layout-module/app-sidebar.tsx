@@ -243,7 +243,7 @@ export function AppSidebar({
                     <Button variant="outline" size="icon" className="h-10 w-10">
                       {currentWorkspace?.avatar ? (
                         <Avatar className="h-5 w-5">
-                          <AvatarImage src={currentWorkspace.avatar} />
+                          <AvatarImage className='object-cover' src={currentWorkspace.avatar} />
                           <AvatarFallback className="text-[10px]">
                             {getInitials(currentWorkspace.name)}
                           </AvatarFallback>
@@ -272,7 +272,7 @@ export function AppSidebar({
                         <div className="flex items-center space-x-2 min-w-0">
                           {currentWorkspace.avatar && (
                             <Avatar className="h-5 w-5">
-                              <AvatarImage src={currentWorkspace.avatar} />
+                              <AvatarImage className='object-cover' src={currentWorkspace.avatar} />
                               <AvatarFallback className="text-[10px]">
                                 {getInitials(currentWorkspace.name)}
                               </AvatarFallback>
@@ -310,7 +310,7 @@ export function AppSidebar({
                               />
                               {ws.avatar && (
                                 <Avatar className="h-5 w-5">
-                                  <AvatarImage src={ws.avatar} />
+                                  <AvatarImage className='object-cover' src={ws.avatar} />
                                   <AvatarFallback className="text-[10px]">
                                     {getInitials(ws.name)}
                                   </AvatarFallback>

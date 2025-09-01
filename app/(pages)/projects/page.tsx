@@ -664,7 +664,7 @@ const UserAvatar = ({ user }: { user: UserInfo | null }) => {
       .toUpperCase() || "";
   return (
     <Avatar className="h-6 w-6">
-      <AvatarImage src={user?.avatar || undefined} alt={user?.name || ""} />
+      <AvatarImage className='object-cover' src={user?.avatar || undefined} alt={user?.name || ""} />
       <AvatarFallback>
         {initials || <UserIcon className="h-4 w-4" />}
       </AvatarFallback>

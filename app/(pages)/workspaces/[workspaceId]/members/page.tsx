@@ -90,7 +90,7 @@ export default function MembersPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={item.avatar || ""} />
+                        <AvatarImage className='object-cover' src={item.avatar || ""} />
                         <AvatarFallback>
                           {item.email.charAt(0).toUpperCase()}
                         </AvatarFallback>

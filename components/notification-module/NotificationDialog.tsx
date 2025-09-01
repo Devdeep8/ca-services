@@ -54,7 +54,7 @@ export function NotificationPopover() {
                 notifications.map((notification, index) => (
                     <div key={index} className="flex items-start gap-3 p-2 rounded-md hover:bg-accent">
                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={notification.avatar} />
+                            <AvatarImage className='object-cover' src={notification.avatar} />
                             <AvatarFallback>{notification.fallback}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-0.5 text-sm">

@@ -49,7 +49,7 @@ function TaskCard({ task  , projectId , workspaceId}: { task: TaskWithAssignee ,
           </div>
           {task.assignee ? (
               <Avatar className="h-6 w-6">
-              <AvatarImage src={task.assignee.avatar || ''} alt={task.assignee.name || 'User'} />
+              <AvatarImage className='object-cover' src={task.assignee.avatar || ''} alt={task.assignee.name || 'User'} />
               <AvatarFallback>{task.assignee.name?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
           ) : null}

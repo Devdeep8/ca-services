@@ -190,7 +190,7 @@ export function TaskEditPageClient({
             {task.comments.map((c) => (
               <div key={c.id} className="flex gap-3 text-sm">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={c.user.avatar || ""} />
+                  <AvatarImage className='object-cover' src={c.user.avatar || ""} />
                   <AvatarFallback>{c.user.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>

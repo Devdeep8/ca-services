@@ -74,7 +74,7 @@ export function ProjectTable({ tasks, onTaskUpdate }: ProjectTableProps) {
                                     {task.assignee ? (
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-6 w-6">
-                                                <AvatarImage src={task.assignee.avatar || ''} alt={task.assignee.name || ''} />
+                                                <AvatarImage className='object-cover' src={task.assignee.avatar || ''} alt={task.assignee.name || ''} />
                                                 <AvatarFallback>{task.assignee.name?.charAt(0).toUpperCase()}</AvatarFallback>
                                             </Avatar>
                                             <span className="text-muted-foreground">{task.assignee.name}</span>

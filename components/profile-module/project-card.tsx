@@ -133,7 +133,7 @@ export const ProjectCard = ({
             <span><AvatarGroup>
               {project.members.map((member , index) => (
             <Avatar className="w-8 h-8 cursor-pointer" key={index}>
-            <AvatarImage  src= {member.user.avatar || ""} alt={`${member.user.name}'s avatar`}/>
+            <AvatarImage className="object-cover" src= {member.user.avatar || ""} alt={`${member.user.name}'s avatar`}/>
             <AvatarFallback>
               {getInitials(member.user?.name || "")}
             </AvatarFallback>
@@ -160,7 +160,7 @@ const UserAvatar = ({ user }: { user: UserInfo | null }) => {
       .toUpperCase() || "";
   return (
     <Avatar className="h-6 w-6">
-      <AvatarImage src={user?.avatar || undefined} alt={user?.name || ""} />
+      <AvatarImage className='object-cover' src={user?.avatar || undefined} alt={user?.name || ""} />
       <AvatarFallback>
         {initials || <UserIcon className="h-4 w-4" />}
       </AvatarFallback>

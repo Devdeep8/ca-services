@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Camera, X } from "lucide-react"; // Import icons for better UI
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -112,59 +112,69 @@ async function onSubmit(values: z.infer<typeof UpdateProfileSchema>) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
-              control={form.control}
-              name="avatar"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Avatar</FormLabel>
-                  <div className="flex items-center gap-4">
-                    <div className="relative group">
-                      <Avatar className="h-24 w-24">
-                        <AvatarImage src={preview || undefined} className="group-hover:opacity-60 transition-opacity" />
-                        <AvatarFallback className="group-hover:opacity-60 transition-opacity">
-                            {currentUser.name?.[0]?.toUpperCase() || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <label htmlFor="avatar-upload" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 text-white rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Camera className="h-6 w-6" />
-                        <FormControl>
-                          <Input
-                            id="avatar-upload"
-                            type="file"
-                            className="sr-only" // Hide the ugly default input
-                            accept="image/png, image/jpeg, image/jpg"
-                            disabled={isPending}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              field.onChange(file);
-                              if (file) {
-                                setPreview(URL.createObjectURL(file));
-                              }
-                            }}
-                          />
-                        </FormControl>
-                      </label>
-                    </div>
-                    {preview && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-full"
-                        onClick={() => {
-                          setPreview(null);
-                          // Use setValue to programmatically update the form
-                          form.setValue('avatar', null as any, { shouldDirty: true });
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
+  control={form.control}
+  name="avatar"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Avatar</FormLabel>
+      <FormDescription>
+        For best results, upload a <span className="font-medium">512×512</span> square image.
+      </FormDescription>
+      <div className="flex items-center gap-4">
+        <div className="relative group">
+          <Avatar className="h-24 w-24">
+            <AvatarImage
+              className="object-cover group-hover:opacity-60 transition-opacity"
+              src={preview || undefined}
+              alt="profile image"
             />
+            <AvatarFallback className="group-hover:opacity-60 transition-opacity">
+              {currentUser.name?.[0]?.toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <label
+            htmlFor="avatar-upload"
+            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 text-white rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Camera className="h-6 w-6" />
+            <FormControl>
+              <Input
+                id="avatar-upload"
+                type="file"
+                className="sr-only" // Hide the ugly default input
+                accept="image/png, image/jpeg, image/jpg"
+                disabled={isPending}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  field.onChange(file);
+                  if (file) {
+                    setPreview(URL.createObjectURL(file));
+                  }
+                }}
+              />
+            </FormControl>
+          </label>
+        </div>
+        {preview && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={() => {
+              setPreview(null);
+              form.setValue("avatar", null as any, { shouldDirty: true });
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
             
             <FormField
               control={form.control}

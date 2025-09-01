@@ -17,7 +17,7 @@ const updateProjectSchema = z.object({
   priority: z.nativeEnum(Priority).optional(),
   projectType: z.nativeEnum(ProjectType).optional(), // New
   isClientProject: z.boolean().optional(), // New
-  zohoFolderLink: z.string().url("Must be a valid URL").nullable().optional(), // New
+  zohoFolderLink: z.url("Must URL").nullable().optional(), // New
   startDate: z.coerce.date().optional().nullable(),
   dueDate: z.coerce.date().optional().nullable(),
 

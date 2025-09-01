@@ -117,7 +117,7 @@ export function TimeTracking({ taskId, initialTotalHours, timeEntries, onTimeLog
             <div key={entry.id} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                        <AvatarImage src={entry.user.avatar || ''} />
+                        <AvatarImage className='object-cover' src={entry.user.avatar || ''} />
                         <AvatarFallback>{entry.user.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span className="text-muted-foreground">{entry.user.name} logged time</span>

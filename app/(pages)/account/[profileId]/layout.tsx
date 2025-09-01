@@ -36,7 +36,7 @@ export default async function ProfileLayout({
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user.avatar || ''} alt={user.name} />
+              <AvatarImage className='object-cover' src={user.avatar || ''} alt={user.name} />
               <AvatarFallback>{userInitials}</AvatarFallback>
             </Avatar>
             <div>
