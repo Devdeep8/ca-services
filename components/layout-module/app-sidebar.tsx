@@ -80,6 +80,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import Image from "next/image";
+
 // Types
 export interface NavigationItem {
   name: string;
@@ -105,14 +107,14 @@ export interface Workspace {
 export interface AppSidebarProps {
   // Navigation
   navigationGroups: NavigationGroup[];
-  
+
   // Workspace management
   workspaces?: Workspace[];
   currentWorkspace?: Workspace | null;
   onWorkspaceSwitch?: (workspaceId: string) => Promise<void>;
   onWorkspaceAdd?: (name: string) => Promise<void>;
   showWorkspaceSwitcher?: boolean;
-  
+
   // Customization
   className?: string;
   variant?: "sidebar" | "floating" | "inset";
@@ -162,37 +164,24 @@ export function AppSidebar({
   };
 
   // Handle adding new workspace
-  const handleAddWorkspace = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!newWorkspaceName.trim() || isSubmitting || !onWorkspaceAdd) return;
-
-    setIsSubmitting(true);
-    try {
-      await onWorkspaceAdd(newWorkspaceName.trim());
-      setNewWorkspaceName("");
-      setIsAddWorkspaceOpen(false);
-    } catch (error) {
-      console.error("Failed to add workspace:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // Check if path is active or has active children
   const isActiveLink = (href: string, children?: NavigationItem[]) => {
     // Direct match
     if (pathname === href) return true;
-    
+
     // Check if any children are active
     if (children) {
-      return children.some(child => 
-        pathname === child.href || 
-        (child.children && child.children.some(grandchild => pathname === grandchild.href))
+      return children.some(
+        (child) =>
+          pathname === child.href ||
+          (child.children &&
+            child.children.some((grandchild) => pathname === grandchild.href))
       );
     }
-    
+
     // Partial match for parent routes
-    return pathname.startsWith(href + '/');
+    return pathname.startsWith(href + "/");
   };
 
   // Toggle group open state
@@ -209,7 +198,7 @@ export function AppSidebar({
   // Auto-expand active groups
   useEffect(() => {
     const newOpenGroups = new Set<string>();
-    
+
     navigationGroups.forEach((group) => {
       group.items.forEach((item) => {
         if (item.children && isActiveLink(item.href, item.children)) {
@@ -217,23 +206,22 @@ export function AppSidebar({
         }
       });
     });
-    
-    setOpenGroups(prev => new Set([...prev, ...newOpenGroups]));
+
+    setOpenGroups((prev) => new Set([...prev, ...newOpenGroups]));
   }, [pathname, navigationGroups]);
-  
 
   return (
     <>
-    <TooltipProvider delayDuration={0}>
-      <Sidebar
-        variant={variant}
-        side={side}
-        collapsible={collapsible}
-        // Use the state from the useSidebar hook to control the width
-        className={cn("border-r", state === "collapsed" && "w-14", className)}
-      >
-        {/* === SIDEBAR HEADER === */}
-        <SidebarHeader className="border-b">
+      <TooltipProvider delayDuration={0}>
+        <Sidebar
+          variant={variant}
+          side={side}
+          collapsible={collapsible}
+          // Use the state from the useSidebar hook to control the width
+          className={cn("border-r", state === "collapsed" && "w-14", className)}
+        >
+          {/* === SIDEBAR HEADER === */}
+          {/* <SidebarHeader className="border-b">
           {showWorkspaceSwitcher && (
             <div className="px-3 py-2">
               {state === "collapsed" ? (
@@ -340,226 +328,275 @@ export function AppSidebar({
               )}
             </div>
           )}
-        </SidebarHeader>
+        </SidebarHeader> */}
 
-        {/* === SIDEBAR CONTENT === */}
-        <SidebarContent>
-          {navigationGroups.map((group, groupIndex) => (
-            <SidebarGroup key={groupIndex}>
-              {group.label && state !== "collapsed" && (
-                <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
-                  {group.label}
-                </SidebarGroupLabel>
-              )}
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {group.items.map((item) => {
-                    const hasChildren = item.children && item.children.length > 0;
-                    
-                    // --- COLLAPSED STATE LOGIC ---
-                    if (state === "collapsed") {
-                      if (hasChildren) {
-                        // RENDER POPOVER FOR ITEMS WITH CHILDREN
-                        return (
-                          <Popover key={item.name}>
-                            <PopoverTrigger asChild>
-                              <SidebarMenuItem>
-                                <SidebarMenuButton
-                                  isActive={isActiveLink(item.href, item.children)}
-                                  className="justify-center"
-                                >
-                                  <item.icon className="h-4 w-4" />
-                                  <span className="sr-only">{item.name}</span>
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            </PopoverTrigger>
-                            <PopoverContent side="right" align="start" className="p-1 w-48">
-                              <div className="flex flex-col space-y-1">
-                                <p className="px-3 py-2 text-sm font-semibold">{item.name}</p>
-                                {item.children?.map((child) => (
-                                  <Link
-                                    key={child.name}
-                                    href={child.href}
-                                    className={cn(
-                                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-accent",
-                                      pathname === child.href && "bg-accent"
+          <SidebarHeader className="border-b">
+            <div className="px-3 py-3 flex flex-col items-center text-center">
+              <div className="flex flex-col items-center space-x-2">
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={30}
+                  height={30}
+                  unoptimized
+                  className="rounded-md"
+                />
+
+                <h1 className="text-lg font-semibold truncate">
+                  {process.env.NEXT_PUBLIC_APP_NAME || "My Project"}
+                </h1>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Powered by <span className="font-medium"><a className="text-blue-500" href="https://prabisha.com" target="_blank" rel="noopener noreferrer">Prabisha</a></span>
+              </p>
+            </div>
+          </SidebarHeader>
+
+          {/* === SIDEBAR CONTENT === */}
+          <SidebarContent>
+            {navigationGroups.map((group, groupIndex) => (
+              <SidebarGroup key={groupIndex}>
+                {group.label && state !== "collapsed" && (
+                  <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
+                    {group.label}
+                  </SidebarGroupLabel>
+                )}
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map((item) => {
+                      const hasChildren =
+                        item.children && item.children.length > 0;
+
+                      // --- COLLAPSED STATE LOGIC ---
+                      if (state === "collapsed") {
+                        if (hasChildren) {
+                          // RENDER POPOVER FOR ITEMS WITH CHILDREN
+                          return (
+                            <Popover key={item.name}>
+                              <PopoverTrigger asChild>
+                                <SidebarMenuItem>
+                                  <SidebarMenuButton
+                                    isActive={isActiveLink(
+                                      item.href,
+                                      item.children
                                     )}
+                                    className="justify-center"
                                   >
-                                    <child.icon className="h-4 w-4" />
-                                    <span>{child.name}</span>
-                                  </Link>
-                                ))}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        );
-                      } else {
-                        // RENDER TOOLTIP FOR ITEMS WITHOUT CHILDREN
-                        return (
-                          <Tooltip key={item.name}>
-                            <TooltipTrigger asChild>
-                              <SidebarMenuItem>
-                                <SidebarMenuButton
-                                  asChild
-                                  isActive={pathname === item.href}
-                                  className="justify-center"
-                                >
-                                  <Link href={item.href}>
                                     <item.icon className="h-4 w-4" />
                                     <span className="sr-only">{item.name}</span>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                side="right"
+                                align="start"
+                                className="p-1 w-48"
+                              >
+                                <div className="flex flex-col space-y-1">
+                                  <p className="px-3 py-2 text-sm font-semibold">
+                                    {item.name}
+                                  </p>
+                                  {item.children?.map((child) => (
+                                    <Link
+                                      key={child.name}
+                                      href={child.href}
+                                      className={cn(
+                                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-accent",
+                                        pathname === child.href && "bg-accent"
+                                      )}
+                                    >
+                                      <child.icon className="h-4 w-4" />
+                                      <span>{child.name}</span>
+                                    </Link>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          );
+                        } else {
+                          // RENDER TOOLTIP FOR ITEMS WITHOUT CHILDREN
+                          return (
+                            <Tooltip key={item.name}>
+                              <TooltipTrigger asChild>
+                                <SidebarMenuItem>
+                                  <SidebarMenuButton
+                                    asChild
+                                    isActive={pathname === item.href}
+                                    className="justify-center"
+                                  >
+                                    <Link href={item.href}>
+                                      <item.icon className="h-4 w-4" />
+                                      <span className="sr-only">
+                                        {item.name}
+                                      </span>
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                                <p>{item.name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        }
+                      }
+
+                      // --- EXPANDED STATE LOGIC (Your Original Code) ---
+                      return (
+                        <SidebarMenuItem key={item.name}>
+                          {hasChildren ? (
+                            <Collapsible
+                              open={openGroups.has(item.name)}
+                              onOpenChange={() => toggleGroup(item.name)}
+                            >
+                              <div className="flex items-center">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={
+                                    isActiveLink(item.href, item.children) &&
+                                    !openGroups.has(item.name)
+                                  }
+                                  className="flex-1"
+                                >
+                                  <Link
+                                    href={item.href}
+                                    className="flex items-center gap-2 w-full"
+                                  >
+                                    <item.icon className="h-4 w-4" />
+                                    <span className="flex-1">{item.name}</span>
+                                    {item.badge && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs h-5"
+                                      >
+                                        {item.badge}
+                                      </Badge>
+                                    )}
                                   </Link>
                                 </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              <p>{item.name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        );
-                      }
-                    }
+                                <CollapsibleTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-sidebar-accent"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      toggleGroup(item.name);
+                                    }}
+                                  >
+                                    {openGroups.has(item.name) ? (
+                                      <ChevronDown className="h-3 w-3" />
+                                    ) : (
+                                      <ChevronRight className="h-3 w-3" />
+                                    )}
+                                  </Button>
+                                </CollapsibleTrigger>
+                              </div>
 
-                    // --- EXPANDED STATE LOGIC (Your Original Code) ---
-                    return (
-                      <SidebarMenuItem key={item.name}>
-                        {hasChildren ? (
-                          <Collapsible
-                            open={openGroups.has(item.name)}
-                            onOpenChange={() => toggleGroup(item.name)}
-                          >
-                            <div className="flex items-center">
-                              <SidebarMenuButton
-                                asChild
-                                isActive={isActiveLink(item.href, item.children) && !openGroups.has(item.name)}
-                                className="flex-1"
-                              >
-                                <Link
-                                  href={item.href}
-                                  className="flex items-center gap-2 w-full"
-                                >
-                                  <item.icon className="h-4 w-4" />
-                                  <span className="flex-1">{item.name}</span>
-                                  {item.badge && (
-                                    <Badge variant="secondary" className="text-xs h-5">
-                                      {item.badge}
-                                    </Badge>
-                                  )}
-                                </Link>
-                              </SidebarMenuButton>
-                              <CollapsibleTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 hover:bg-sidebar-accent"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    toggleGroup(item.name);
-                                  }}
-                                >
-                                  {openGroups.has(item.name) ? (
-                                    <ChevronDown className="h-3 w-3" />
-                                  ) : (
-                                    <ChevronRight className="h-3 w-3" />
-                                  )}
-                                </Button>
-                              </CollapsibleTrigger>
-                            </div>
-
-                            <CollapsibleContent>
-                              <SidebarMenuSub>
-                                {item.children?.map((child) => (
-                                  <SidebarMenuSubItem key={child.name}>
-                                    <SidebarMenuSubButton
-                                      asChild
-                                      isActive={pathname === child.href}
-                                    >
-                                      <Link
-                                        href={child.href}
-                                        className="flex items-center gap-2 w-full"
+                              <CollapsibleContent>
+                                <SidebarMenuSub>
+                                  {item.children?.map((child) => (
+                                    <SidebarMenuSubItem key={child.name}>
+                                      <SidebarMenuSubButton
+                                        asChild
+                                        isActive={pathname === child.href}
                                       >
-                                        <child.icon className="h-3 w-3" />
-                                        <span className="flex-1">{child.name}</span>
-                                        {child.badge && (
-                                          <Badge variant="secondary" className="text-xs h-4">
-                                            {child.badge}
-                                          </Badge>
-                                        )}
-                                      </Link>
-                                    </SidebarMenuSubButton>
-                                  </SidebarMenuSubItem>
-                                ))}
-                              </SidebarMenuSub>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        ) : (
-                          <SidebarMenuButton
-                            asChild
-                            isActive={pathname === item.href}
-                          >
-                            <Link
-                              href={item.href}
-                              className="flex items-center gap-2 w-full"
+                                        <Link
+                                          href={child.href}
+                                          className="flex items-center gap-2 w-full"
+                                        >
+                                          <child.icon className="h-3 w-3" />
+                                          <span className="flex-1">
+                                            {child.name}
+                                          </span>
+                                          {child.badge && (
+                                            <Badge
+                                              variant="secondary"
+                                              className="text-xs h-4"
+                                            >
+                                              {child.badge}
+                                            </Badge>
+                                          )}
+                                        </Link>
+                                      </SidebarMenuSubButton>
+                                    </SidebarMenuSubItem>
+                                  ))}
+                                </SidebarMenuSub>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          ) : (
+                            <SidebarMenuButton
+                              asChild
+                              isActive={pathname === item.href}
                             >
-                              <item.icon className="h-4 w-4" />
-                              <span className="flex-1">{item.name}</span>
-                              {item.badge && (
-                                <Badge variant="secondary" className="text-xs h-5">
-                                  {item.badge}
-                                </Badge>
-                              )}
-                            </Link>
-                          </SidebarMenuButton>
-                        )}
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
-        </SidebarContent>
-        
-        {/* === SIDEBAR FOOTER === */}
-        {session?.user && (
-          <SidebarFooter className="border-t">
-            {state === "collapsed" ? (
+                              <Link
+                                href={item.href}
+                                className="flex items-center gap-2 w-full"
+                              >
+                                <item.icon className="h-4 w-4" />
+                                <span className="flex-1">{item.name}</span>
+                                {item.badge && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs h-5"
+                                  >
+                                    {item.badge}
+                                  </Badge>
+                                )}
+                              </Link>
+                            </SidebarMenuButton>
+                          )}
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ))}
+          </SidebarContent>
+
+          {/* === SIDEBAR FOOTER === */}
+          {session?.user && (
+            <SidebarFooter className="border-t">
+              {state === "collapsed" ? (
                 // --- COLLAPSED FOOTER ---
-                 <div className="flex justify-center p-2">
-                   <DropdownMenu>
-                     <DropdownMenuTrigger asChild>
-                       <Avatar className="h-8 w-8 cursor-pointer">
-                         <AvatarImage
-                           src={session.user.image || ""}
-                           alt={session.user.name || "User"}
-                         />
-                         <AvatarFallback>
-                           {getInitials(session.user.name || "")}
-                         </AvatarFallback>
-                       </Avatar>
-                     </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start">
-                         <DropdownMenuLabel className="font-normal">
-                          <div className="flex flex-col space-y-1">
-                            <p className="text-sm font-medium leading-none">
-                              {session.user.name}
-                            </p>
-                            <p className="text-xs leading-none text-muted-foreground">
-                              {session.user.email}
-                            </p>
-                          </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => signOut({ callbackUrl: "/sign-in" })}
-                          className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          <span>Sign Out</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                   </DropdownMenu>
-                 </div>
-            ) : (
+                <div className="flex justify-center p-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Avatar className="h-8 w-8 cursor-pointer">
+                        <AvatarImage
+                          className="object-cover"
+                          src={session.user.image || ""}
+                          alt={session.user.name || "User"}
+                        />
+                        <AvatarFallback>
+                          {getInitials(session.user.name || "")}
+                        </AvatarFallback>
+                      </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start">
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">
+                            {session.user.name}
+                          </p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {session.user.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => signOut({ callbackUrl: "/sign-in" })}
+                        className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Sign Out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ) : (
                 // --- EXPANDED FOOTER (Original Code) ---
                 <SidebarMenu>
                   <SidebarMenuItem>
@@ -571,6 +608,7 @@ export function AppSidebar({
                         >
                           <Avatar className="h-8 w-8 shrink-0">
                             <AvatarImage
+                              className="object-cover"
                               src={session.user.avatar || ""}
                               alt={session.user.name || "User"}
                             />
@@ -589,11 +627,8 @@ export function AppSidebar({
                           <ChevronsUpDown className="ml-auto h-4 w-4" />
                         </SidebarMenuButton>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-56"
-                        align="end"
-                      >
-                         <DropdownMenuLabel className="font-normal">
+                      <DropdownMenuContent className="w-56" align="end">
+                        <DropdownMenuLabel className="font-normal">
                           <div className="flex flex-col space-y-1">
                             <p className="text-sm font-medium leading-none">
                               {session.user.name}
@@ -615,13 +650,12 @@ export function AppSidebar({
                     </DropdownMenu>
                   </SidebarMenuItem>
                 </SidebarMenu>
-            )}
-          </SidebarFooter>
-        )}
-        <SidebarRail/>
-      </Sidebar>
-    </TooltipProvider>
-
+              )}
+            </SidebarFooter>
+          )}
+          <SidebarRail />
+        </Sidebar>
+      </TooltipProvider>
     </>
   );
 }
@@ -639,7 +673,7 @@ export function MobileHeader() {
         <SidebarTrigger className="h-8 w-8" />
         <span className="font-semibold">Dashboard</span>
       </div>
-      
+
       {session?.user && (
         <div className="flex items-center space-x-2">
           <Avatar className="h-8 w-8">

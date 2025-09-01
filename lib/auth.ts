@@ -54,7 +54,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user , trigger , session }) {
       if (user) {
         token.sub = user.id;
         token.name = user.name;
@@ -62,6 +62,11 @@ export const authOptions: NextAuthOptions = {
         token.avatar = user.avatar; // 'user' has the full user object from the DB
 
       }
+      if (trigger === "update") {
+        if (session?.name !== undefined) token.name = session.name;
+        if (session?.avatar !== undefined) token.avatar = session.avatar;
+      }
+      
       return token;
     },
     async session({ session, token } ) {
