@@ -225,7 +225,10 @@ export default function DashboardLayout({
             {/* Mobile Header with SidebarTrigger */}
             <MobileHeader />
             <Header session={session}/>
-              <SidebarTrigger />
+            <button  className="absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-5 left-[-0.9rem] and z-50" >
+              <SidebarTrigger className="hover:bg-foreground hover:text-background"  />
+
+            </button>
 
             {/* Page Content */}
             <main className="flex-1 p-4 lg:p-6">
