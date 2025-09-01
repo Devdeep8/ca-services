@@ -331,25 +331,59 @@ export function AppSidebar({
         </SidebarHeader> */}
 
           <SidebarHeader className="border-b">
-            <div className="px-3 py-3 flex flex-col items-center text-center">
-              <div className="flex flex-col items-center space-x-2">
-                <Image
-                  src="/logo.png"
-                  alt="Logo"
-                  width={30}
-                  height={30}
-                  unoptimized
-                  className="rounded-md"
-                />
-
-                <h1 className="text-lg font-semibold truncate">
-                  {process.env.NEXT_PUBLIC_APP_NAME || "My Project"}
-                </h1>
+            {state === "collapsed" ? (
+              // --- COLLAPSED VIEW (WITH TOOLTIP) ---
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {/* We add padding here to center the logo */}
+                  <div className="flex justify-center py-3">
+                    <Image
+                      src="/logo.png"
+                      alt="Logo"
+                      width={30}
+                      height={30}
+                      unoptimized
+                      // This class prevents the image from shrinking
+                      className="rounded-md flex-shrink-0"
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{process.env.NEXT_PUBLIC_APP_NAME || "My Project"}</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              // --- EXPANDED VIEW ---
+              <div className="px-3 py-3 flex flex-col items-center text-center">
+                <div className="flex flex-col items-center">
+                  <Image
+                    src="/logo.png"
+                    alt="Logo"
+                    width={30}
+                    height={30}
+                    unoptimized
+                    // We add the class here too for consistency
+                    className="rounded-md flex-shrink-0"
+                  />
+                  <h1 className="text-lg font-semibold truncate mt-2">
+                    {process.env.NEXT_PUBLIC_APP_NAME || "My Project"}
+                  </h1>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Powered by{" "}
+                  <span className="font-medium">
+                    <a
+                      className="text-blue-500"
+                      href="https://prabisha.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Prabisha
+                    </a>
+                  </span>
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Powered by <span className="font-medium"><a className="text-blue-500" href="https://prabisha.com" target="_blank" rel="noopener noreferrer">Prabisha</a></span>
-              </p>
-            </div>
+            )}
           </SidebarHeader>
 
           {/* === SIDEBAR CONTENT === */}
