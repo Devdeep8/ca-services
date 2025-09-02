@@ -69,3 +69,25 @@ export const UpdateProfileSchemaForProfile = z.object({
     )
     .optional(),
 });
+
+
+
+
+// src/lib/schemas.ts
+
+
+// Define the allowed enum values for a task status
+const taskStatusEnum = z.enum([
+  'TODO',
+  'IN_PROGRESS',
+  'REVIEW',
+  'DONE'
+]);
+
+// Schema to validate the body of the PUT request for updating a task status
+export const updateTaskStatusSchema = z.object({
+  status: taskStatusEnum,
+});
+
+// We can also infer the TypeScript type from the schema if needed elsewhere
+export type UpdateTaskStatusDto = z.infer<typeof updateTaskStatusSchema>;
