@@ -75,11 +75,88 @@ model User {
   WorkspaceInvitation  WorkspaceInvitation[]
   workspaceMemberships WorkspaceMember[]
   ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
-    notifications        NotificationRecipient[] // A user can have many notification records
 
+  notifications NotificationRecipient[] // A user can have many notification records
+  calendarItems CalendarItem[]          @relation("CalendarItemCreator")
 
   @@index([departmentId], map: "users_departmentId_fkey")
   @@map("users")
+}
+
+model WorkspaceCalendar {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @default("Workspace Calendar")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  events    CalendarItem[]
+
+  @@unique([workspaceId]) // One calendar per workspace
+  @@map("workspace_calendars")
+}
+
+model CalendarItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  startTime   DateTime
+  endTime     DateTime
+  isAllDay    Boolean  @default(false)
+
+  // What type of item is this?
+  itemType CalendarItemType @default(EVENT)
+
+  // Links to existing data
+  taskId    String? // Link to existing task
+  projectId String? // Link to project
+
+  // Who and where
+  createdById         String
+  workspaceCalendarId String
+  location            String?
+
+  // Visual and priority
+  color    String             @default("#3B82F6")
+  priority Priority           @default(MEDIUM)
+  status   CalendarItemStatus @default(SCHEDULED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspaceCalendar WorkspaceCalendar @relation(fields: [workspaceCalendarId], references: [id], onDelete: Cascade)
+  createdBy         User              @relation("CalendarItemCreator", fields: [createdById], references: [id])
+  task              Task?             @relation(fields: [taskId], references: [id])
+  project           Project?          @relation(fields: [projectId], references: [id])
+
+  @@index([workspaceCalendarId])
+  @@index([createdById])
+  @@index([taskId])
+  @@index([projectId])
+  @@index([startTime])
+  @@index([endTime])
+  @@map("calendar_items")
+}
+
+enum CalendarItemType {
+  TASK_DEADLINE // Automatic from task due dates
+  MEETING // User created meetings
+  EVENT // General events
+  BREAK // Lunch, coffee breaks
+  VACATION // Time off
+  TRAINING // Training sessions
+  CLIENT_CALL // Client meetings
+  MILESTONE // Project milestones
+}
+
+enum CalendarItemStatus {
+  SCHEDULED // Normal scheduled item
+  IN_PROGRESS // Currently happening
+  COMPLETED // Done
+  CANCELLED // Cancelled
+  POSTPONED // Moved to later
 }
 
 model Asset {
@@ -116,15 +193,22 @@ model Department {
 }
 
 model Workspace {
-  id          String                @id @default(cuid())
-  name        String
-  ownerId     String
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  projects    Project[]
-  invitations WorkspaceInvitation[]
-  members     WorkspaceMember[]
-  owner       User                  @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  id                String                @id @default(cuid())
+  name              String
+  ownerId           String
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  projects          Project[]
+  invitations       WorkspaceInvitation[]
+  members           WorkspaceMember[]
+  owner             User                  @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  WorkspaceCalendar WorkspaceCalendar?
+  // Calendar settings for workspace
+  calendarEnabled     Boolean           @default(true)
+  defaultCalendarView String            @default("week")
+  businessHoursStart  String?           @default("09:00")
+  businessHoursEnd    String?           @default("18:00")
+  workingDays         String            @default("1,2,3,4,5") // Monday to Friday
 
   @@index([ownerId], map: "workspaces_ownerId_fkey")
   @@map("workspaces")
@@ -162,6 +246,7 @@ model WorkspaceInvitation {
   @@index([invitedById], map: "workspace_invitations_invitedById_fkey")
   @@map("workspace_invitations")
 }
+
 model InternalProduct {
   id        String    @id @default(cuid())
   name      String    @unique
@@ -169,32 +254,35 @@ model InternalProduct {
   updatedAt DateTime  @updatedAt
   projects  Project[]
 }
+
 model Project {
-  id          String        @id @default(cuid())
-  name        String        @unique
-  description String?
-  workspaceId String
-  status      ProjectStatus @default(ACTIVE)
-  priority    Priority      @default(MEDIUM)
-  projectType ProjectType   @default(FIXED_TERM) // <-- New field
-  zohoFolderLink String?    
-  startDate    DateTime?
-  dueDate      DateTime?
-  createdBy    String
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  departmentId String?
-  clientId     String?
-  isClientProject   Boolean         @default(false) // Renamed from 'isClient' for clarity
-  activityLogs ActivityLog[]
-  members      ProjectMember[]
-  clientUser   User?           @relation("clientProjects", fields: [clientId], references: [id])
-  creator      User            @relation(fields: [createdBy], references: [id])
-  department   Department?     @relation(fields: [departmentId], references: [id])
-  workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                String           @id @default(cuid())
+  name              String           @unique
+  description       String?
+  workspaceId       String
+  status            ProjectStatus    @default(ACTIVE)
+  priority          Priority         @default(MEDIUM)
+  projectType       ProjectType      @default(FIXED_TERM) // <-- New field
+  zohoFolderLink    String?
+  startDate         DateTime?
+  dueDate           DateTime?
+  createdBy         String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  departmentId      String?
+  clientId          String?
+  isClientProject   Boolean          @default(false) // Renamed from 'isClient' for clarity
+  activityLogs      ActivityLog[]
+  members           ProjectMember[]
+  clientUser        User?            @relation("clientProjects", fields: [clientId], references: [id])
+  creator           User             @relation(fields: [createdBy], references: [id])
+  department        Department?      @relation(fields: [departmentId], references: [id])
+  workspace         Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   internalProductId String?
   internalProduct   InternalProduct? @relation(fields: [internalProductId], references: [id])
-  tasks        Task[]
+  tasks             Task[]
+
+  calendarItems CalendarItem[]
 
   @@index([createdBy], map: "projects_createdBy_fkey")
   @@index([workspaceId], map: "projects_workspaceId_fkey")
@@ -240,6 +328,7 @@ model Task {
   project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   reporter       User             @relation("TaskReporter", fields: [reporterId], references: [id])
   timeEntries    TimeEntry[]
+  calendarItems  CalendarItem[]
 
   @@index([assigneeId], map: "tasks_assigneeId_fkey")
   @@index([projectId], map: "tasks_projectId_fkey")
@@ -316,27 +405,27 @@ model ActivityLog {
 }
 
 model Notification {
-  id        String    @id @default(cuid())
-  type      String    // e.g., 'PROJECT_CREATED', 'TASK_ASSIGNED', 'MEMBER_ADDED'
-  message   String    @db.Text
-  url       String?   // A URL to redirect the user to when they click the notification
-  createdAt DateTime  @default(now())
+  id        String   @id @default(cuid())
+  type      String // e.g., 'PROJECT_CREATED', 'TASK_ASSIGNED', 'MEMBER_ADDED'
+  message   String   @db.Text
+  url       String? // A URL to redirect the user to when they click the notification
+  createdAt DateTime @default(now())
 
   // Relation to the recipients of this notification
   recipients NotificationRecipient[]
 }
 
 model NotificationRecipient {
-  id             String        @id @default(cuid())
-  recipientId    String        // The ID of the User who should receive the notification
+  id             String     @id @default(cuid())
+  recipientId    String // The ID of the User who should receive the notification
   notificationId String
-  readAt         DateTime?     // Timestamp for when the user read the notification
-  status         ReadStatus    @default(UNREAD)
+  readAt         DateTime? // Timestamp for when the user read the notification
+  status         ReadStatus @default(UNREAD)
 
   // You need a relationship back to your main User model.
   // Prisma allows this even across "conceptual" services if they share a DB.
-  recipient    User          @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  notification Notification  @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  recipient    User         @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
   @@unique([recipientId, notificationId])
   @@index([recipientId])
