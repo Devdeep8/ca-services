@@ -753,6 +753,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@faker-js/faker@npm:^10.0.0":
+  version: 10.0.0
+  resolution: "@faker-js/faker@npm:10.0.0"
+  checksum: a3bcb92091086d8c3fe9b9de6658761415c1a96c90b1f62da9ad82f5f733f67b46441a2ac7df945d3d319da043a34563fd91ca74c0ffc04aaf319c319ef0aaa8
+  languageName: node
+  linkType: hard
+
 "@floating-ui/core@npm:^1.7.3":
   version: 1.7.3
   resolution: "@floating-ui/core@npm:1.7.3"
@@ -7321,6 +7328,7 @@ __metadata:
     "@dnd-kit/core": ^6.1.0
     "@dnd-kit/sortable": ^8.0.0
     "@dnd-kit/utilities": ^3.2.2
+    "@faker-js/faker": ^10.0.0
     "@hookform/resolvers": ^5.2.1
     "@next-auth/prisma-adapter": ^1.0.7
     "@prisma/client": ^6.14.0

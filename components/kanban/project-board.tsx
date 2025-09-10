@@ -359,14 +359,14 @@ export default function ProjectBoard({
 
   return (
     <ProjectContext.Provider value={contextValue}>
-      <div className="p-4 md:p-6 h-full flex flex-col bg-background text-foreground">
+      <div className=" h-full flex flex-col bg-background text-foreground">
         {/* ✨ 3. UPDATE THE HEADER TO DISPLAY THE STATUS */}
-        <header className="flex items-center justify-between mb-4 pb-2 border-b">
-          <div className="flex items-center gap-4">
+        {/* <header className="flex items-center justify-between mb-4 pb-2 border-b"> */}
+          {/* <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold">{boardData.name} Board</h1>
-            {getDueDateStatus()}
-          </div>
-          <div className="flex items-center gap-2 p-1 bg-muted rounded-md">
+            {/* {getDueDateStatus()} */}
+          {/* </div> */}
+          {/* <div className="flex items-center gap-2 p-1 bg-muted rounded-md">
             <Button
               variant="ghost"
               size="sm"
@@ -395,8 +395,8 @@ export default function ProjectBoard({
               <List className="h-4 w-4" />
               Table
             </Button>
-          </div>
-        </header>
+          </div> */}
+        {/* </header> */}
 
         {viewMode === "board" ? (
           <DndContext

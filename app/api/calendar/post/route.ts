@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/utils/getcurrentUser";
 import { validationBodyData } from "@/utils/getDataValidated";
 import {
-  CreateCalendarEventInput,
   CreateCalendarEventSchema,
   createCalendarEvent,
 } from "@/services/calander-services/create-calander-items.service";
@@ -19,30 +18,32 @@ export async function POST(req: Request) {
     if (!getUserWorkSpaceId) {
       throw new Error("No workspace found");
     }
-    const validatedData = await validationBodyData(req, CreateCalendarEventSchema);
+    const validatedData = await validationBodyData(
+      req,
+      CreateCalendarEventSchema
+    );
 
-
-    if(!validatedData.success){
-      throw new Error('Invalid data')
+    if (!validatedData.success) {
+      throw new Error("Invalid data");
     }
 
-    const getWorkSpaceCalenderId = await db.workspace.findUnique({
-      where: {
-        id: getUserWorkSpaceId,
-      },
-      select: {
-        id: true,
-      },
+
+
+    const workspaceCalendar = await db.workspaceCalendar.findFirst({
+      where: { workspaceId: getUserWorkSpaceId },
+      select: { id: true },
     });
 
-    if(!getWorkSpaceCalenderId){
-      throw new Error('No calander found')
+    if (!workspaceCalendar) {
+      throw new Error("No workspace calendar found");
     }
 
-
-    const calanderEventCreated = await createCalendarEvent( validatedData.data , user.id , getWorkSpaceCalenderId?.id );
-
-    return NextResponse.json({ message: 'Calander event created successfully' , data: calanderEventCreated }, { status: 201 });
+    const calanderEventCreated = await createCalendarEvent(
+      validatedData.data,
+      user.id,
+      workspaceCalendar.id
+    );
+return NextResponse.json({ data: calanderEventCreated }, { status: 201 });
 
   } catch (error) {
     console.error("calander error", error);

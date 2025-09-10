@@ -1,6 +1,12 @@
 'use client';
 
-import { getDay, getDaysInMonth, isSameDay } from 'date-fns';
+import {
+  addMonths,
+  getDay,
+  getDaysInMonth,
+  isSameDay,
+  subMonths,
+} from 'date-fns'; // MODIFICATION: Added addMonths and subMonths
 import { atom, useAtom } from 'jotai';
 import {
   Check,
@@ -43,8 +49,36 @@ const monthAtom = atom<CalendarState['month']>(
 );
 const yearAtom = atom<CalendarState['year']>(new Date().getFullYear());
 
+// --- ADDITION START ---
+const dayAtom = atom(new Date().getDate());
+// --- ADDITION END ---
+
 export const useCalendarMonth = () => useAtom(monthAtom);
 export const useCalendarYear = () => useAtom(yearAtom);
+
+// --- ADDITION START ---
+// Unified hook to get and set the full date
+export const useCalendar = () => {
+  const [month, setMonth] = useAtom(monthAtom);
+  const [year, setYear] = useAtom(yearAtom);
+  const [day, setDay] = useAtom(dayAtom);
+
+  // Memoize the date object for performance
+  const date = useMemo(() => new Date(year, month, day), [year, month, day]);
+
+  // Create a single setter function for convenience
+  const setDate = useCallback(
+    (newDate: Date) => {
+      setYear(newDate.getFullYear());
+      setMonth(newDate.getMonth() as CalendarState['month']);
+      setDay(newDate.getDate());
+    },
+    [setYear, setMonth, setDay]
+  );
+
+  return { date, setDate };
+};
+// --- ADDITION END ---
 
 type CalendarContextProps = {
   locale: Intl.LocalesArgument;
@@ -141,7 +175,6 @@ const Combobox = ({
         <Command
           filter={(value, search) => {
             const label = data.find((item) => item.value === value)?.label;
-
             return label?.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
           }}
         >
@@ -196,7 +229,6 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
   const [year] = useCalendarYear();
   const { startDay } = useContext(CalendarContext);
 
-  // Memoize expensive date calculations
   const currentMonthDate = useMemo(
     () => new Date(year, month, 1),
     [year, month]
@@ -210,7 +242,6 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
     [currentMonthDate, startDay]
   );
 
-  // Memoize previous month calculations
   const prevMonthData = useMemo(() => {
     const prevMonth = month === 0 ? 11 : month - 1;
     const prevMonthYear = month === 0 ? year - 1 : year;
@@ -222,7 +253,6 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
     return { prevMonthDays, prevMonthDaysArray };
   }, [month, year]);
 
-  // Memoize next month calculations
   const nextMonthData = useMemo(() => {
     const nextMonth = month === 11 ? 0 : month + 1;
     const nextMonthYear = month === 11 ? year + 1 : year;
@@ -234,7 +264,6 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
     return { nextMonthDaysArray };
   }, [month, year]);
 
-  // Memoize features filtering by day to avoid recalculating on every render
   const featuresByDay = useMemo(() => {
     const result: { [day: number]: Feature[] } = {};
     for (let day = 1; day <= daysInMonth; day++) {
@@ -252,7 +281,6 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
       prevMonthData.prevMonthDaysArray[
         prevMonthData.prevMonthDays - firstDay + i
       ];
-
     if (day) {
       days.push(<OutOfBoundsDay day={day} key={`prev-${i}`} />);
     }
@@ -260,7 +288,6 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const featuresForDay = featuresByDay[day] || [];
-
     days.push(
       <div
         className="relative flex h-full w-full flex-col gap-1 p-1 text-muted-foreground text-xs"
@@ -283,7 +310,6 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
   if (remainingDays < 7) {
     for (let i = 0; i < remainingDays; i++) {
       const day = nextMonthData.nextMonthDaysArray[i];
-
       if (day) {
         days.push(<OutOfBoundsDay day={day} key={`next-${i}`} />);
       }
@@ -329,7 +355,6 @@ export const CalendarMonthPicker = ({
   const [month, setMonth] = useCalendarMonth();
   const { locale } = useContext(CalendarContext);
 
-  // Memoize month data to avoid recalculating date formatting
   const monthData = useMemo(() => {
     return monthsForLocale(locale).map((month, index) => ({
       value: index.toString(),
@@ -389,29 +414,20 @@ export type CalendarDatePaginationProps = {
   className?: string;
 };
 
+// --- MODIFICATION START ---
+// Replaced the old component with this simpler one using the new hook
 export const CalendarDatePagination = ({
   className,
 }: CalendarDatePaginationProps) => {
-  const [month, setMonth] = useCalendarMonth();
-  const [year, setYear] = useCalendarYear();
+  const { date, setDate } = useCalendar(); // Use the new hook
 
   const handlePreviousMonth = useCallback(() => {
-    if (month === 0) {
-      setMonth(11);
-      setYear(year - 1);
-    } else {
-      setMonth((month - 1) as CalendarState['month']);
-    }
-  }, [month, year, setMonth, setYear]);
+    setDate(subMonths(date, 1));
+  }, [date, setDate]);
 
   const handleNextMonth = useCallback(() => {
-    if (month === 11) {
-      setMonth(0);
-      setYear(year + 1);
-    } else {
-      setMonth((month + 1) as CalendarState['month']);
-    }
-  }, [month, year, setMonth, setYear]);
+    setDate(addMonths(date, 1));
+  }, [date, setDate]);
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
@@ -424,6 +440,7 @@ export const CalendarDatePagination = ({
     </div>
   );
 };
+// --- MODIFICATION END ---
 
 export type CalendarDateProps = {
   children: ReactNode;
@@ -440,7 +457,6 @@ export type CalendarHeaderProps = {
 export const CalendarHeader = ({ className }: CalendarHeaderProps) => {
   const { locale, startDay } = useContext(CalendarContext);
 
-  // Memoize days data to avoid recalculating date formatting
   const daysData = useMemo(() => {
     return daysForLocale(locale, startDay);
   }, [locale, startDay]);

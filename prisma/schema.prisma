@@ -115,7 +115,6 @@ model CalendarItem {
   // Who and where
   createdById         String
   workspaceCalendarId String
-  location            String?
 
   // Visual and priority
   color    String             @default("#3B82F6")
@@ -272,6 +271,7 @@ model Project {
   departmentId      String?
   clientId          String?
   isClientProject   Boolean          @default(false) // Renamed from 'isClient' for clarity
+  notes             String?          @db.Text
   activityLogs      ActivityLog[]
   members           ProjectMember[]
   clientUser        User?            @relation("clientProjects", fields: [clientId], references: [id])
