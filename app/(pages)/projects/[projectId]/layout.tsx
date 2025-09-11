@@ -21,7 +21,7 @@ export default async function ProjectLayout({
   const {projectId} = await params;
   const project = await db.project.findUnique({
     where: { id: projectId },
-    select: { workspaceId: true },
+    select: { workspaceId: true , name: true },
   });
 
   if (!project?.workspaceId) {
@@ -52,13 +52,18 @@ export default async function ProjectLayout({
       href: `/projects/${projectId}/files?workspaceId=${workspaceId}`,
       icon: 'File',
     },
+    {
+      label: 'Notes',
+      href: `/projects/${projectId}/notes?workspaceId=${workspaceId}`,
+      icon: 'NotebookTabs',
+    },
   ];
 
   return (
     <div>
       <header className="mb-4 pb-2">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Project Board</h1>
+          <h1 className="text-2xl font-bold">{project.name}</h1>
         </div>
         <ProjectNavigation tabs={projectNavItems} />
       </header>

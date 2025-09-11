@@ -271,7 +271,7 @@ model Project {
   departmentId      String?
   clientId          String?
   isClientProject   Boolean          @default(false) // Renamed from 'isClient' for clarity
-  notes             String?          @db.Text
+  notes           Json?    // <-- CHANGE THIS from String? @db.Text to Json?
   activityLogs      ActivityLog[]
   members           ProjectMember[]
   clientUser        User?            @relation("clientProjects", fields: [clientId], references: [id])
