@@ -10,23 +10,59 @@ generator client {
 }
 
 // ==================== MODELS ====================
-
-model User {
-  id         Int        @id @default(autoincrement())
-  email      String     @unique
-  name       String
-  role       UserRole
-  googleId   String?    @map("google_id")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
+model Organization {
+  id        Int           @id @default(autoincrement())
+  name      String
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  clients    Client[]   @relation("CreatedClients")
-  documents  Document[] @relation("UploadedDocuments")
-  gstReturns GSTReturn[] @relation("CreatedGSTReturns")
-  itrs       ITR[]       @relation("CreatedITRs")
-  reminders  Reminder[]  @relation("CreatedReminders")
+  memberships Membership[]
+  clients     Client[]
+  businesses  Business[]
+  gstins      GSTIN[]
+  documents   Document[]
+  gstReturns  GSTReturn[]
+  itrs        ITR[]
+  reminders   Reminder[]
+  analyses    AIAnalysis[]
 }
+
+model Membership {
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  userId         Int          @map("user_id")
+  role           OrgUserRole  @default(Member)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+}
+
+enum OrgUserRole {
+  Admin
+  Member
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  name         String
+  role         UserRole
+  googleId     String?       @map("google_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  memberships Membership[]
+  clients     Client[]       @relation("CreatedClients")
+  documents   Document[]     @relation("UploadedDocuments")
+  gstReturns  GSTReturn[]    @relation("CreatedGSTReturns")
+  itrs        ITR[]          @relation("CreatedITRs")
+  reminders   Reminder[]     @relation("CreatedReminders")
+}
+
 
 enum UserRole {
   CA
@@ -34,41 +70,54 @@ enum UserRole {
   Client
 }
 
+// -------------------- Clients --------------------
+
 model Client {
-  id         Int         @id @default(autoincrement())
-  name       String
-  email      String
-  phone      String
-  pan        String
-  address    String
-  createdBy  Int         @map("created_by")
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
+  id             Int         @id @default(autoincrement())
+  organizationId Int         @map("organization_id")
+  name           String
+  email          String?
+  phone          String?
+  pan            String?
+  address        String?
+  createdBy      Int         @map("created_by")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
 
   // Relations
-  creator    User        @relation("CreatedClients", fields: [createdBy], references: [id])
-  businesses Business[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  creator      User         @relation("CreatedClients", fields: [createdBy], references: [id])
+  businesses   Business[]
+  
+  @@index([organizationId])
+  @@map("clients")
 }
 
+// -------------------- Business --------------------
 model Business {
-  id         Int         @id @default(autoincrement())
-  clientId   Int         @map("client_id")
-  name       String
-  type       String?     // e.g., Proprietorship, Pvt Ltd, Partnership
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  clientId       Int          @map("client_id")
+  name           String
+  type           String?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
   // Relations
-  client     Client      @relation(fields: [clientId], references: [id])
-  gstins     GSTIN[]
-  documents  Document[]
-  gstReturns GSTReturn[]
-  itrs       ITR[]
-  reminders  Reminder[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  client       Client       @relation(fields: [clientId], references: [id])
+  gstins       GSTIN[]
+  documents    Document[]
+  gstReturns   GSTReturn[]
+  itrs         ITR[]
+  reminders    Reminder[]
 }
+
+// -------------------- GSTIN --------------------
 
 model GSTIN {
   id                Int       @id @default(autoincrement())
+  organizationId    Int       @map("organization_id")
   businessId        Int       @map("business_id")
   gstinNumber       String    @map("gstin_number")
   state             String
@@ -78,9 +127,15 @@ model GSTIN {
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  business   Business   @relation(fields: [businessId], references: [id])
-  documents  Document[]
-  gstReturns GSTReturn[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  business     Business     @relation(fields: [businessId], references: [id])
+  documents    Document[]
+  gstReturns   GSTReturn[]
+
+  @@index([organizationId])
+  @@index([businessId])
+  @@unique([organizationId, gstinNumber]) // Prevent duplicate GSTIN in same org
+  @@map("gstins")
 }
 
 enum GSTINStatus {
@@ -89,8 +144,11 @@ enum GSTINStatus {
   Suspended
 }
 
+// -------------------- Document --------------------
+
 model Document {
   id           Int       @id @default(autoincrement())
+  organizationId Int     @map("organization_id")
   businessId   Int       @map("business_id")
   gstinId      Int?      @map("gstin_id")
   uploadedBy   Int       @map("uploaded_by")
@@ -103,14 +161,22 @@ model Document {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  business  Business @relation(fields: [businessId], references: [id])
-  gstin     GSTIN?   @relation(fields: [gstinId], references: [id])
-  uploader  User     @relation("UploadedDocuments", fields: [uploadedBy], references: [id])
-  analyses  AIAnalysis[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  business     Business     @relation(fields: [businessId], references: [id])
+  gstin        GSTIN?       @relation(fields: [gstinId], references: [id])
+  uploader     User         @relation("UploadedDocuments", fields: [uploadedBy], references: [id])
+  analyses     AIAnalysis[]
+
+  @@index([organizationId])
+  @@index([businessId])
+  @@map("documents")
 }
+
+// -------------------- GSTReturn --------------------
 
 model GSTReturn {
   id                 Int       @id @default(autoincrement())
+  organizationId     Int       @map("organization_id")
   businessId         Int       @map("business_id")
   gstinId            Int       @map("gstin_id")
   returnType         ReturnType @map("return_type")
@@ -126,10 +192,15 @@ model GSTReturn {
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  business Business @relation(fields: [businessId], references: [id])
-  gstin    GSTIN    @relation(fields: [gstinId], references: [id])
-  creator  User     @relation("CreatedGSTReturns", fields: [createdBy], references: [id])
-  analyses AIAnalysis[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  business     Business     @relation(fields: [businessId], references: [id])
+  gstin        GSTIN        @relation(fields: [gstinId], references: [id])
+  creator      User         @relation("CreatedGSTReturns", fields: [createdBy], references: [id])
+  analyses     AIAnalysis[]
+
+  @@index([organizationId])
+  @@index([businessId])
+  @@map("gst_returns")
 }
 
 enum ReturnType {
@@ -144,8 +215,11 @@ enum FilingStatus {
   Rejected
 }
 
+// -------------------- ITR --------------------
+
 model ITR {
   id             Int       @id @default(autoincrement())
+  organizationId Int       @map("organization_id")
   businessId     Int       @map("business_id")
   assessmentYear Int       @map("assessment_year")
   itrType        String    @map("itr_type")
@@ -158,26 +232,39 @@ model ITR {
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  business Business @relation(fields: [businessId], references: [id])
-  creator  User     @relation("CreatedITRs", fields: [createdBy], references: [id])
-  analyses AIAnalysis[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  business     Business     @relation(fields: [businessId], references: [id])
+  creator      User         @relation("CreatedITRs", fields: [createdBy], references: [id])
+  analyses     AIAnalysis[]
+
+  @@index([organizationId])
+  @@index([businessId])
+  @@map("itrs")
 }
 
+// -------------------- Reminder --------------------
+
 model Reminder {
-  id          Int           @id @default(autoincrement())
-  businessId  Int           @map("business_id")
-  title       String
-  description String
-  dueDate     DateTime      @map("due_date")
-  reminderType ReminderType @map("reminder_type")
-  status      ReminderStatus
-  createdBy   Int           @map("created_by")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id           Int           @id @default(autoincrement())
+  organizationId Int         @map("organization_id")
+  businessId   Int           @map("business_id")
+  title        String
+  description  String
+  dueDate      DateTime      @map("due_date")
+  reminderType ReminderType  @map("reminder_type")
+  status       ReminderStatus
+  createdBy    Int           @map("created_by")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  business Business @relation(fields: [businessId], references: [id])
-  creator  User     @relation("CreatedReminders", fields: [createdBy], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  business     Business     @relation(fields: [businessId], references: [id])
+  creator      User         @relation("CreatedReminders", fields: [createdBy], references: [id])
+
+  @@index([organizationId])
+  @@index([businessId])
+  @@map("reminders")
 }
 
 enum ReminderType {
@@ -192,8 +279,11 @@ enum ReminderStatus {
   Acknowledged
 }
 
+// -------------------- AIAnalysis --------------------
+
 model AIAnalysis {
   id              Int          @id @default(autoincrement())
+  organizationId  Int          @map("organization_id")
   documentId      Int?         @map("document_id")
   gstReturnId     Int?         @map("gst_return_id")
   itrId           Int?         @map("itr_id")
@@ -205,9 +295,13 @@ model AIAnalysis {
   updatedAt       DateTime     @updatedAt @map("updated_at")
 
   // Relations
-  document  Document?  @relation(fields: [documentId], references: [id])
-  gstReturn GSTReturn? @relation(fields: [gstReturnId], references: [id])
-  itr       ITR?       @relation(fields: [itrId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  document     Document?    @relation(fields: [documentId], references: [id])
+  gstReturn    GSTReturn?   @relation(fields: [gstReturnId], references: [id])
+  itr          ITR?         @relation(fields: [itrId], references: [id])
+
+  @@index([organizationId])
+  @@map("ai_analyses")
 }
 
 enum AnalysisType {
