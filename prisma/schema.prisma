@@ -1,13 +1,15 @@
-// schema.prisma
-
-datasource db {
-  provider = "postgresql" // or "mysql" / "sqlite"
-  url      = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL") // 👈 this makes migrations work
+}
+
 
 // ==================== MODELS ====================
 model Organization {
@@ -15,7 +17,6 @@ model Organization {
   name      String
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
-
   // Relations
   memberships Membership[]
   clients     Client[]
@@ -34,7 +35,6 @@ model Membership {
   userId         Int          @map("user_id")
   role           OrgUserRole  @default(Member)
   createdAt      DateTime     @default(now()) @map("created_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   user         User         @relation(fields: [userId], references: [id])
@@ -51,9 +51,10 @@ model User {
   name         String
   role         UserRole
   googleId     String?       @map("google_id")
+  password     String?       // Added for credentials authentication
+  avatar       String?       // Added for user avatar
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
-
   // Relations
   memberships Membership[]
   clients     Client[]       @relation("CreatedClients")
@@ -63,7 +64,6 @@ model User {
   reminders   Reminder[]     @relation("CreatedReminders")
 }
 
-
 enum UserRole {
   CA
   Staff
@@ -71,7 +71,6 @@ enum UserRole {
 }
 
 // -------------------- Clients --------------------
-
 model Client {
   id             Int         @id @default(autoincrement())
   organizationId Int         @map("organization_id")
@@ -83,7 +82,6 @@ model Client {
   createdBy      Int         @map("created_by")
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   creator      User         @relation("CreatedClients", fields: [createdBy], references: [id])
@@ -102,7 +100,6 @@ model Business {
   type           String?
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   client       Client       @relation(fields: [clientId], references: [id])
@@ -114,7 +111,6 @@ model Business {
 }
 
 // -------------------- GSTIN --------------------
-
 model GSTIN {
   id                Int       @id @default(autoincrement())
   organizationId    Int       @map("organization_id")
@@ -125,13 +121,11 @@ model GSTIN {
   status            GSTINStatus
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   business     Business     @relation(fields: [businessId], references: [id])
   documents    Document[]
   gstReturns   GSTReturn[]
-
   @@index([organizationId])
   @@index([businessId])
   @@unique([organizationId, gstinNumber]) // Prevent duplicate GSTIN in same org
@@ -145,7 +139,6 @@ enum GSTINStatus {
 }
 
 // -------------------- Document --------------------
-
 model Document {
   id           Int       @id @default(autoincrement())
   organizationId Int     @map("organization_id")
@@ -159,21 +152,18 @@ model Document {
   extractedData Json?    @map("extracted_data")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   business     Business     @relation(fields: [businessId], references: [id])
   gstin        GSTIN?       @relation(fields: [gstinId], references: [id])
   uploader     User         @relation("UploadedDocuments", fields: [uploadedBy], references: [id])
   analyses     AIAnalysis[]
-
   @@index([organizationId])
   @@index([businessId])
   @@map("documents")
 }
 
 // -------------------- GSTReturn --------------------
-
 model GSTReturn {
   id                 Int       @id @default(autoincrement())
   organizationId     Int       @map("organization_id")
@@ -190,14 +180,12 @@ model GSTReturn {
   createdBy          Int       @map("created_by")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   business     Business     @relation(fields: [businessId], references: [id])
   gstin        GSTIN        @relation(fields: [gstinId], references: [id])
   creator      User         @relation("CreatedGSTReturns", fields: [createdBy], references: [id])
   analyses     AIAnalysis[]
-
   @@index([organizationId])
   @@index([businessId])
   @@map("gst_returns")
@@ -216,7 +204,6 @@ enum FilingStatus {
 }
 
 // -------------------- ITR --------------------
-
 model ITR {
   id             Int       @id @default(autoincrement())
   organizationId Int       @map("organization_id")
@@ -230,20 +217,17 @@ model ITR {
   createdBy      Int       @map("created_by")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   business     Business     @relation(fields: [businessId], references: [id])
   creator      User         @relation("CreatedITRs", fields: [createdBy], references: [id])
   analyses     AIAnalysis[]
-
   @@index([organizationId])
   @@index([businessId])
   @@map("itrs")
 }
 
 // -------------------- Reminder --------------------
-
 model Reminder {
   id           Int           @id @default(autoincrement())
   organizationId Int         @map("organization_id")
@@ -256,12 +240,10 @@ model Reminder {
   createdBy    Int           @map("created_by")
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   business     Business     @relation(fields: [businessId], references: [id])
   creator      User         @relation("CreatedReminders", fields: [createdBy], references: [id])
-
   @@index([organizationId])
   @@index([businessId])
   @@map("reminders")
@@ -280,7 +262,6 @@ enum ReminderStatus {
 }
 
 // -------------------- AIAnalysis --------------------
-
 model AIAnalysis {
   id              Int          @id @default(autoincrement())
   organizationId  Int          @map("organization_id")
@@ -293,13 +274,11 @@ model AIAnalysis {
   confidenceScore Float?
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
-
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id])
   document     Document?    @relation(fields: [documentId], references: [id])
   gstReturn    GSTReturn?   @relation(fields: [gstReturnId], references: [id])
   itr          ITR?         @relation(fields: [itrId], references: [id])
-
   @@index([organizationId])
   @@map("ai_analyses")
 }
