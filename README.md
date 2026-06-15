@@ -1,7 +1,7 @@
 # 🏛️ CA Practice Automation
 
 A comprehensive platform for Chartered Accountants in India to streamline GST returns, ITR filings, and client management with AI-powered automation.
-
+  
 ## ✨ Features
 
 ### 🏛️ Core Functionality
